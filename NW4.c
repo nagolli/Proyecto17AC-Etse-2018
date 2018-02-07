@@ -53,8 +53,8 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 //Prueba de funcion calcular casilla
 int main()
 {
-    unsigned r=2,c=0;
-    struct Celda **arr = (struct Celda **)malloc(20 * sizeof(struct Celda *));
+    unsigned r=2,c=2;
+    struct Celda **arr = (struct Celda **)malloc(r*c * sizeof(struct Celda *));
     unsigned i;
     for (i = 0; i < r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
