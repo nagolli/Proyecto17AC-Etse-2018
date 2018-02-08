@@ -15,6 +15,14 @@ struct Celda** InicioMatriz(unsigned,unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 int GetRuta(struct Celda**);
+void Mayus(char * temp) {
+  char * name;
+  name = strtok(temp,":");
+  char *s = name;
+  while (*s) {
+    *s = toupper((unsigned char) *s);
+    s++;
+  }}
 
 int main()
 { 
@@ -25,9 +33,40 @@ int main()
     CompletarMatriz(string1,string2,Matriz);
     int resultado= GetRuta(Matriz);
     
-    return resultado /*== resultadoNumerico estandar*/;
+    return resultado == 5;
 }
 
+/**
+ * CargarFichero funcion que guarda en un string el contenido de un fichero .fasta
+ * @author Lidia y Nacho
+ * @date 8/2/2018
+ * @param NombreFichero nombre del fichero, incluida extension y ruta relativa
+ * @out string con el contenido en mayusculas
+ */
+char* CargarFichero(char* NombreFichero)
+{
+    FILE *archivo;
+ 	
+ 	char caracteres[1000];
+ 	char *cadena=malloc(100000000);   //Límite de 10 millones de caracteres
+ 	strcpy (cadena, ""); 
+ 	archivo = fopen(NombreFichero,"r");
+ 	unsigned cont=0;
+ 	
+ 	if (archivo == NULL)
+ 		exit(1);
+ 	else
+        {
+        fgets(caracteres,1000,archivo); //Primera linea
+ 	    while (feof(archivo) == 0 && strlen(cadena)<90000000) //Hasta fin de archivo o memoria
+ 	    {
+ 		fgets(caracteres,1000,archivo);
+ 		strcat(cadena, caracteres);
+ 	    }
+        }
+        Mayus(cadena);
+	return cadena;
+}
 
 /**
  * CompletarMatriz funcion que calcula el algoritmo Needleman-Wunsch para una matriz
@@ -45,7 +84,7 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
     unsigned size2=strlen(string2);
     for(i=1;i<=size1;i++)
         for(j=1;j<=size2;j++)
-            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]), matrix);
+            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
     return;
 }
 
@@ -61,15 +100,15 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
 void CompletarFila(char* string1,char* string2,struct Celda** matrix, unsigned i)//Para empezar de 0 dar i=1
 {
     unsigned j;
-    unsigned size1=strlen(string2);
+    unsigned size1=strlen(string1);
     unsigned size2=strlen(string2);
-        CalcularCasilla(i, 1, (string1[i-1]==string2[0]), matrix);
+        CalcularCasilla(i, 1, (string1[i-1]==string2[0]||string1[i-1]=='N'||string2[0]=='N'), matrix);
         if(i<=size1)
         {
             //Lanzar siguiente fila
         }
         for(j=2;j<=size2;j++)
-            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]), matrix);
+            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
     return;
 }
 
