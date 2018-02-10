@@ -69,7 +69,7 @@ void CalcularCasilla(unsigned i, unsigned j, bool s, struct Celda** arr)
 int main()
 {
     unsigned r=50,c=50;
-    struct Celda **arr = (struct Celda **)malloc(r*c * sizeof(struct Celda *));
+    struct Celda **arr = (struct Celda **)malloc(r*c * sizeof(struct Celda));
     unsigned i;
     for (i = 0; i < r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
