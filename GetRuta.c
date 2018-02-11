@@ -10,6 +10,7 @@ struct Celda
     bool diag;
     bool arriba;
     bool lateral;
+    bool contado;
 };
 char* CargarFichero(char*);
 struct Celda** InicioMatriz(unsigned,unsigned);
@@ -48,7 +49,7 @@ int main( int argc, char *argv[] )
 		int row = strlen(string1);
 		int col = strlen(string2);
 		struct Celda **Matriz;
-		Matriz=InicioMatriz(row,col);
+		Matriz=InicioMatriz(row - 1,col - 1);
 		t2 = time(0);
 		CompletarMatriz(string1,string2,Matriz);
 		t3 = time(0);
@@ -88,15 +89,16 @@ char* CargarFichero(char* NombreFichero)
  	if (archivo == NULL)
  		exit(1);
  	else
-        {
+	{
         fgets(caracteres,1000,archivo); //Primera linea
  	    while (feof(archivo) == 0 && strlen(cadena)<90000000) //Hasta fin de archivo o memoria
  	    {
- 		fgets(caracteres,1000,archivo);
- 		strcat(cadena, caracteres);
+			fgets(caracteres,1000,archivo);
+			strcat(cadena, caracteres);
  	    }
-        }
-        Mayus(cadena);
+	}
+	Mayus(cadena);
+	
 	return cadena;
 }
 
@@ -140,13 +142,14 @@ void CompletarFila(char* string1,char* string2,struct Celda** matrix, unsigned i
     unsigned j;
     unsigned size1=strlen(string1);
     unsigned size2=strlen(string2);
-        CalcularCasilla(i, 1, (string1[i-1]==string2[0]||string1[i-1]=='N'||string2[0]=='N'), matrix);
-        if(i<=size1)
-        {
-            //Lanzar siguiente fila
-        }
-        for(j=2;j<=size2;j++)
-            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
+	
+	CalcularCasilla(i, 1, (string1[i-1]==string2[0]||string1[i-1]=='N'||string2[0]=='N'), matrix);
+	if(i<=size1)
+	{
+		//Lanzar siguiente fila
+	}
+	for(j=2;j<=size2;j++)
+		CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
     return;
 }
 
@@ -173,24 +176,32 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
 }
 
+/**
+ * GetRuta funcion que cuenta cuantas veces los alineamiento pasa por una diagonal distinta
+ * @author Paul
+ * @date 8/2/2018
+ * @param matrix Matriz de structs sobre la que se opera. In/Out
+ * @param row Posicion en la fila de la celda que comprobaremos
+ * @param col Posicion en la columna de la celda que comprobaremos
+ */
 int GetRuta(struct Celda** matrix, int row, int col)
 {	
 	int diag = 0;
 	int i = row;
 	int j = col;
 	
-	if(i >= 0 && j >= 0)
+	if(matrix[i][j].lateral)
+		diag += GetRuta(matrix, i - 1, j);
+	if(matrix[i][j].arriba)
+		diag += GetRuta(matrix, i, j - 1);
+	if(matrix[i][j].diag)
 	{
-		if(matrix[i][j].lateral)
-			diag += GetRuta(matrix, i - 1, j);
-		else if(matrix[i][j].arriba)
-			diag += GetRuta(matrix, i, j - 1);
-		else if(matrix[i][j].diag)
+		if(!matrix[i][j].contado)
 			diag += 1;
+		diag += GetRuta(matrix, i - 1, j - 1);
+		
 	}
-	
+		
     return diag;
 }
-
-
 
