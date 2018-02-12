@@ -17,6 +17,7 @@ struct Celda
 
 char* CargarFichero(char*);
 struct Celda** InicioMatriz(unsigned,unsigned);
+struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 int GetRuta(struct Celda**);
@@ -82,7 +83,7 @@ char* CargarFichero(char* NombreFichero)
     FILE *archivo;
  	
  	char caracteres[1000];
- 	char *cadena=malloc(100000000);   //LÌmite de 10 millones de caracteres
+ 	char *cadena=malloc(100000000);   //L√≠mite de 10 millones de caracteres
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
  	
@@ -113,6 +114,39 @@ struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
     return arr;
 }
 
+/**
+ * inicializarMatriz funcion que crea la matriz de tama√±o r c e inicializa la primera fila y columna con valores negativos descendentes.
+ * @author Sara
+ * @date 12/2/2018
+ * @param unsigned r rows
+ * @param unsigned c cols
+ * @out arr matriz con los valores negativos
+ */
+struct Celda** inicializarMatriz(unsigned r, unsigned c)
+{
+    struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
+    int negativo = -2;
+    
+    //Casos base posicion:  r = 0, c = 0
+    //                      r = 1, c = 0
+    //                      r = 0, c = 1
+    arr[0][0] = 0;
+    arr[1][0] = -2;
+    arr[0][1] = -2;
+    
+    for(unsigned i = 2; i<r; i++)
+    {
+        for(unsigned j = 2; j<c; j++)
+        {
+            arr[i][0] = negativo*2;
+            arr[0][j] = negativo*2;
+            negativo *= 2;
+        }
+    }
+    
+    return arr;
+}
+
 
 /**
  * CompletarMatriz funcion que calcula el algoritmo Needleman-Wunsch para una matriz
@@ -120,7 +154,7 @@ struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
  * @date 7/2/2018
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
- * @param matrix Matriz de Celdas, su tamaÒo debe ser el de las cadenas de texto +1
+ * @param matrix Matriz de Celdas, su tama√±o debe ser el de las cadenas de texto +1
  */
 void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
 {
@@ -133,7 +167,7 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
     for(i=1;i<=size1;i++)
         for(j=1;j<=size2;j++)
             //El argumento de calcular casilla es cierto si ambos strings coinciden o uno de ellos es N
-            //Recordar que el tamaÒo de la matriz es 1 mayor que los strings, y estos se alinean con el final.
+            //Recordar que el tama√±o de la matriz es 1 mayor que los strings, y estos se alinean con el final.
             {
             CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
             }
