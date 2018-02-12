@@ -4,6 +4,9 @@
 #include <string.h>
 #include <time.h>
 
+/*Struct con el valor de la celda y las direcciones
+  Si las direcciones son verdadero, entonces ha heredado de esa direccion
+*/
 struct Celda
 {
     int score;
@@ -11,23 +14,24 @@ struct Celda
     bool arriba;
     bool lateral;
 };
+
 char* CargarFichero(char*);
 struct Celda** InicioMatriz(unsigned,unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 int GetRuta(struct Celda**);
+/*Maximo entre dos unsigneds*/
 unsigned max(unsigned arg1, unsigned arg2)
 {
     if(arg1>arg2){
-        if(arg1==0)
-        return 1;
         return arg1;
     }
     else
-        if(arg2==0)
-        return 1;
         return arg2;
 }
+/*Funcion para pasar a mayuscula una cadena. Obtenida de:
+https://stackoverflow.com/questions/35181913/converting-char-to-uppercase-in-c
+*/
 void Mayus(char * temp) {
   char * name;
   name = strtok(temp,":");
@@ -39,24 +43,24 @@ void Mayus(char * temp) {
 
 int main( int argc, char *argv[] ) 
 { 
-    if(argc == 2)
+    if(argc == 3)
     {
-    time_t t1, t2, t3, t4;
-    t1 = time(0);
-    char* string1=CargarFichero(argv[1]);
-    char* string2=CargarFichero(argv[2]);
-    struct Celda **Matriz;
-    Matriz=InicioMatriz(strlen(string1),strlen(string2));
-    t2 = time(0);
-    CompletarMatriz(string1,string2,Matriz);
-    t3 = time(0);
-    int resultado= GetRuta(Matriz);
-    t4 = time(0);
-    printf("Inicializado:       %d\n", t2 - t1);
-    printf("Creacion de matriz: %d\n", t3 - t2);
-    printf("Backtracking:       %d\n", t4 - t3);
-    printf("Total:              %d\n", t4 - t1);
-    printf("Coincidencia(porc): %d\n", 100*resultado/max(strlen(string1),strlen(string2)));
+        time_t t1, t2, t3, t4;
+        t1 = time(0);
+        char* string1=CargarFichero(argv[1]);
+        char* string2=CargarFichero(argv[2]);
+        struct Celda **Matriz;
+        Matriz=InicioMatriz(strlen(string1),strlen(string2));
+        t2 = time(0);
+        CompletarMatriz(string1,string2,Matriz);
+        t3 = time(0);
+        int resultado= GetRuta(Matriz);
+        t4 = time(0);
+        printf("Inicializado:       %d\n", t2 - t1);
+        printf("Creacion de matriz: %d\n", t3 - t2);
+        printf("Backtracking:       %d\n", t4 - t3);
+        printf("Total:              %d\n", t4 - t1);
+        printf("Coincidencia(porc): %d\n", 100*resultado/max(max(strlen(string1),strlen(string2)),1));
     }
     else
     {
@@ -81,10 +85,12 @@ char* CargarFichero(char* NombreFichero)
  	char *cadena=malloc(100000000);   //Límite de 10 millones de caracteres
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
- 	unsigned cont=0;
  	
  	if (archivo == NULL)
+ 	{
+ 	    printf("%s no existe",NombreFichero);
  		exit(1);
+ 	}
  	else
         {
         fgets(caracteres,1000,archivo); //Primera linea
@@ -100,7 +106,11 @@ char* CargarFichero(char* NombreFichero)
 
 struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
 {
-    return  (struct Celda **)malloc(3*3 * sizeof(struct Celda *));
+    unsigned i;
+    struct Celda **arr =  (struct Celda **)malloc(50*50 * sizeof(struct Celda));
+    for (i = 0; i < 50; ++i)
+        arr[i] = (struct Celda *)malloc(50 * sizeof(struct Celda));
+    return arr;
 }
 
 
@@ -114,37 +124,19 @@ struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
  */
 void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
 {
+    
     unsigned i;
     unsigned j;
     unsigned size1=strlen(string1);
     unsigned size2=strlen(string2);
+    
     for(i=1;i<=size1;i++)
         for(j=1;j<=size2;j++)
+            //El argumento de calcular casilla es cierto si ambos strings coinciden o uno de ellos es N
+            //Recordar que el tamaño de la matriz es 1 mayor que los strings, y estos se alinean con el final.
+            {
             CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
-    return;
-}
-
-/**
- * CompletarFila funcion que calcula el algoritmo Needleman-Wunsch para una fila, preparado para paralelizar una matriz, que en ese caso se pasa i=1
- * @author Nacho
- * @date 7/2/2018
- * @param string1 Cadena de texto 1
- * @param string2 Cadena de texto 2
- * @param matrix Matriz de Celdas, su tamaño debe ser el de las cadenas de texto +1
- * @param i indice de fila a rellenar
- */
-void CompletarFila(char* string1,char* string2,struct Celda** matrix, unsigned i)//Para empezar de 0 dar i=1
-{
-    unsigned j;
-    unsigned size1=strlen(string1);
-    unsigned size2=strlen(string2);
-        CalcularCasilla(i, 1, (string1[i-1]==string2[0]||string1[i-1]=='N'||string2[0]=='N'), matrix);
-        if(i<=size1)
-        {
-            //Lanzar siguiente fila
-        }
-        for(j=2;j<=size2;j++)
-            CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
+            }
     return;
 }
 
@@ -160,15 +152,25 @@ void CompletarFila(char* string1,char* string2,struct Celda** matrix, unsigned i
 void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 {
     // Constantes Match 2, -2 dismatch, -1 Hueco
+    
+    //Version sin IFs
+    //Calculo de los 3 valores
+    
     int A = matrix[i-1][j].score - 1;
     int B = matrix[i][j-1].score - 1;
     int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
     
+    //Busqueda de que caminos maximizan
+    
     matrix[i][j].lateral = (A>=B && A>=C);
     matrix[i][j].arriba  = (B>=A && B>=C);
     matrix[i][j].diag    = (C>=B && C>=A);
+    if((matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag)==0)
+    //Calculo del valor a partir de los valores y direcciones
+    //Sumatorio (valor x Direccion) / Suma de direcciones
     
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
+    
 }
 
 int GetRuta(struct Celda** FillMe)
