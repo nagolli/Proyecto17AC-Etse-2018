@@ -10,11 +10,12 @@ struct Celda
     bool diag;
     bool arriba;
     bool lateral;
-    bool contado;
 };
 
 int GetRuta(struct Celda**, int, int);
-unsigned max(unsigned arg1, unsigned arg2)
+void AuxGetRuta(struct Celda**, int, int, int, int *);
+
+int max(int arg1, int arg2)
 {
     if(arg1>arg2){
         if(arg1==0)
@@ -43,20 +44,20 @@ int main( )
         arr[i][0].arriba=0;
         arr[i][0].lateral=0;
         arr[i][0].diag=0;
-        arr[0][j].arriba=0;
-        arr[0][j].lateral=0;
-        arr[0][j].diag=0;
+        arr[0][i].arriba=0;
+        arr[0][i].lateral=0;
+        arr[0][i].diag=0;
     }
     for (i = 1; i < r; ++i)
-        for (j = 1; i < c; ++i)
+        for (j = 1; j < c; ++j)
         {
         arr[i][j].arriba=1;
         arr[i][j].lateral=1;
         arr[i][j].diag=1;
         }
-    int result=0GetRuta(arr,5,5);
+    int result=GetRuta(arr,5,5);
     printf("El resultado deberia ser 5\n");
-    printf("El resultado es %d",result);
+    printf("El resultado es %d \n",result);
     return 0;
 }
 
@@ -69,24 +70,39 @@ int main( )
  * @param row Posicion en la fila de la celda que comprobaremos
  * @param col Posicion en la columna de la celda que comprobaremos
  */
-int GetRuta(struct Celda** matrix, int row, int col)
-{	
-	int diag = 0;
-	int i = row;
-	int j = col;
+int GetRuta(struct Celda** matrix, int i, int j)
+{
+	int maximo = 0;
 	
-	if(matrix[i][j].lateral)
-		diag += GetRuta(matrix, i - 1, j);
-	if(matrix[i][j].arriba)
-		diag += GetRuta(matrix, i, j - 1);
-	if(matrix[i][j].diag)
-	{
-		if(!matrix[i][j].contado)
-			diag += 1;
-		diag += GetRuta(matrix, i - 1, j - 1);
-		
-	}
-		
-    return diag;
+	AuxGetRuta(matrix, i, j, 0, &maximo);
+	
+	return maximo;
 }
 
+void AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
+{
+    printf("Valores actuales: cont %d   max %d\n", cont, *maximo);
+    
+    
+	if(i == 0 && j == 0)
+	{
+		*maximo = max(cont, *maximo);
+	}
+	else
+	{
+		if(matrix[i][j].lateral)
+        {
+			AuxGetRuta(matrix, i - 1, j, cont + 1, maximo);
+        }
+		if(matrix[i][j].arriba)
+        {
+			AuxGetRuta(matrix, i, j - 1, cont + 1, maximo);
+        }
+		if(matrix[i][j].diag)
+		{
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
+	}
+	
+    return;
+}
