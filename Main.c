@@ -16,7 +16,6 @@ struct Celda
 };
 
 char* CargarFichero(char*);
-struct Celda** InicioMatriz(unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
@@ -92,7 +91,7 @@ char* CargarFichero(char* NombreFichero)
     FILE *archivo;
  	
  	char caracteres[1000];
- 	char *cadena=malloc(100000000);   //Límite de 10 millones de caracteres
+ 	char *cadena=malloc(10000000);   //Limite de 10 millones de caracteres
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
  	
@@ -104,7 +103,7 @@ char* CargarFichero(char* NombreFichero)
  	else
         {
         fgets(caracteres,1000,archivo); //Primera linea
- 	    while (feof(archivo) == 0 && strlen(cadena)<90000000) //Hasta fin de archivo o memoria
+ 	    while (feof(archivo) == 0 && strlen(cadena)<9999000) //Hasta fin de archivo o memoria
  	    {
  		fgets(caracteres,1000,archivo);
  		strcat(cadena, caracteres);
@@ -114,14 +113,6 @@ char* CargarFichero(char* NombreFichero)
 	return cadena;
 }
 
-struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
-{
-    unsigned i;
-    struct Celda **arr =  (struct Celda **)malloc(50*50 * sizeof(struct Celda));
-    for (i = 0; i < 50; ++i)
-        arr[i] = (struct Celda *)malloc(50 * sizeof(struct Celda));
-    return arr;
-}
 
 // inicializarMatriz funcion que crea la matriz de tamaño r c e inicializa la primera fila y columna con valores negativos descendentes.
 // @author Sara
@@ -131,19 +122,31 @@ struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
 // @return arr matriz con los valores negativos
 struct Celda** inicializarMatriz(unsigned r, unsigned c)
 {
+    unsigned i;
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
+    for (i = 0; i < r; ++i)
+        arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
     
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
+    arr[0][0].lateral = 0;
+    arr[0][0].arriba = 0;
+    arr[0][0].diag = 0;
     
-    for(unsigned i = 1 ; i<r; i++)
+    for(i = 1 ; i<r; i++)
     {
         arr[i][0].score = -i;
+        arr[i][0].lateral = 0;
+        arr[i][0].arriba = 0;
+        arr[i][0].diag = 0;
     }
     
-    for(unsigned i = 1 ; i<c; i++)
+    for(i = 1 ; i<c; i++)
     {
         arr[0][i].score = -i;
+        arr[0][i].lateral = 0;
+        arr[0][i].arriba = 0;
+        arr[0][i].diag = 0;
     }
     
     return arr;
