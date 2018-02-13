@@ -20,9 +20,9 @@ struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 int GetRuta(struct Celda**,unsigned,unsigned);
-void AuxGetRuta(struct Celda**, int, int, int, int*)
+void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
 /*Maximo entre dos valores*/
-unsigned max(unsigned arg1, unsigned arg2)
+unsigned maxU(unsigned arg1, unsigned arg2)
 {
     if(arg1>arg2){
         return arg1;
@@ -30,7 +30,7 @@ unsigned max(unsigned arg1, unsigned arg2)
     else
         return arg2;
 }
-int max(int arg1, int arg2)
+int maxI(int arg1, int arg2)
 {
     if(arg1>arg2){
         return arg1;
@@ -54,28 +54,30 @@ int main( int argc, char *argv[] )
 { 
     if(argc == 3)
     {
+        printf("%s comparado con %s\n",argv[1],argv[2]);
         time_t t1, t2, t3, t4;
         t1 = time(0);
         char* string1=CargarFichero(argv[1]);
         char* string2=CargarFichero(argv[2]);
         struct Celda **Matriz;
-        Matriz=InicioMatriz(strlen(string1),strlen(string2));
+        Matriz=inicializarMatriz(strlen(string1),strlen(string2));
         t2 = time(0);
         CompletarMatriz(string1,string2,Matriz);
         t3 = time(0);
-        int resultado= GetRuta(Matriz);
+        int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
         t4 = time(0);
         printf("Inicializado:       %d\n", t2 - t1);
         printf("Creacion de matriz: %d\n", t3 - t2);
         printf("Backtracking:       %d\n", t4 - t3);
         printf("Total:              %d\n", t4 - t1);
-        printf("Coincidencia(porc): %d\n", 100*resultado/max(max(strlen(string1),strlen(string2)),1));
+        printf("Coincidencia(porc): %d\n", 100*resultado/maxU(maxU(strlen(string1),strlen(string2)),1));
     }
     else
     {
         printf("Requiere 2 argumentos\n");
         exit(3);
     }
+    printf("Fin");
     return 0;
 }
 
@@ -124,7 +126,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
 {
     unsigned i;
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
-    for (i = 0; i < r; ++i)
+    for (i = 0; i <= r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
     
     //Casos base posicion:  r = 0, c = 0
@@ -133,7 +135,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
     arr[0][0].arriba = 0;
     arr[0][0].diag = 0;
     
-    for(i = 1 ; i<r; i++)
+    for(i = 1 ; i<=r; i++)
     {
         arr[i][0].score = -i;
         arr[i][0].lateral = 0;
@@ -141,7 +143,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
         arr[i][0].diag = 0;
     }
     
-    for(i = 1 ; i<c; i++)
+    for(i = 1 ; i<=c; i++)
     {
         arr[0][i].score = -i;
         arr[0][i].lateral = 0;
@@ -168,9 +170,8 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
     unsigned j;
     unsigned size1=strlen(string1);
     unsigned size2=strlen(string2);
-    
-    for(i=1;i<=size1;i++)
-        for(j=1;j<=size2;j++)
+    for(i=1;i<=size1;++i)
+        for(j=1;j<=size2;++j)
             //El argumento de calcular casilla es cierto si ambos strings coinciden o uno de ellos es N
             //Recordar que el tamano de la matriz es 1 mayor que los strings, y estos se alinean con el final.
             {
@@ -199,21 +200,23 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     int B = matrix[i][j-1].score - 1;
     int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
     
+    
+    
     //Busqueda de que caminos maximizan
     
     matrix[i][j].lateral = (A>=B && A>=C);
     matrix[i][j].arriba  = (B>=A && B>=C);
     matrix[i][j].diag    = (C>=B && C>=A);
-    if((matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag)==0)
     //Calculo del valor a partir de los valores y direcciones
     
     //Version sin IF
     //Sumatorio (valor x Direccion) / Suma de direcciones
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
     
+    
     //Version con IF
     /*
-    matrix[i][j].score=max(max(A,B),C);
+    matrix[i][j].score=maxI(maxI(A,B),C);
     */
 }
 
@@ -238,7 +241,7 @@ void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, un
 { 
 	if(i == 0 || j == 0)
 	{
-		*maximo = max(cont, *maximo);
+		*maximo = maxU(cont, *maximo);
 	}
 	else
 	{
