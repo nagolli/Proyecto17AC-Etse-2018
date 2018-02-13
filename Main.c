@@ -21,8 +21,16 @@ struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 int GetRuta(struct Celda**);
-/*Maximo entre dos unsigneds*/
+/*Maximo entre dos valores*/
 unsigned max(unsigned arg1, unsigned arg2)
+{
+    if(arg1>arg2){
+        return arg1;
+    }
+    else
+        return arg2;
+}
+int max(int arg1, int arg2)
 {
     if(arg1>arg2){
         return arg1;
@@ -167,7 +175,7 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
     for(i=1;i<=size1;i++)
         for(j=1;j<=size2;j++)
             //El argumento de calcular casilla es cierto si ambos strings coinciden o uno de ellos es N
-            //Recordar que el tamaño de la matriz es 1 mayor que los strings, y estos se alinean con el final.
+            //Recordar que el tamano de la matriz es 1 mayor que los strings, y estos se alinean con el final.
             {
             CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
             }
@@ -201,10 +209,15 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     matrix[i][j].diag    = (C>=B && C>=A);
     if((matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag)==0)
     //Calculo del valor a partir de los valores y direcciones
-    //Sumatorio (valor x Direccion) / Suma de direcciones
     
+    //Version sin IF
+    //Sumatorio (valor x Direccion) / Suma de direcciones
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
     
+    //Version con IF
+    /*
+    matrix[i][j].score=max(max(A,B),C);
+    */
 }
 
 int GetRuta(struct Celda** FillMe)

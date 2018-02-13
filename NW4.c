@@ -1,6 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
+
+int max(int arg1, int arg2)
+{
+    if(arg1>arg2){
+        return arg1;
+    }
+    else
+        return arg2;
+}
 
 struct Celda
 {
@@ -47,7 +57,12 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     matrix[i][j].arriba  = (B>=A && B>=C);
     matrix[i][j].diag    = (C>=B && C>=A);
     
+    //Version sin IF
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
+    //Version con IF
+    /*
+    matrix[i][j].score=max((A,B),C);
+    */
 }
 
 //Prueba de funcion calcular casilla
@@ -77,3 +92,26 @@ int main()
         printf("//");
     return 0;
 }
+/*
+int main()
+{
+    time_t t1, t2;
+    unsigned r=2,c=2;
+    struct Celda **arr = (struct Celda **)malloc(r*c * sizeof(struct Celda));
+    unsigned i;
+    for (i = 0; i < r; ++i)
+        arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
+    srand(time(NULL));
+    t1 = time(0);
+    for(i=0;i<100000;i++){
+    (arr[0][0]).score = rand()%20-10;
+    (arr[1][0]).score = rand()%20-10;
+    (arr[0][1]).score = rand()%20-10;
+    
+    CalcularCasilla(1,1,rand()%2,arr);
+    }
+    t2 = time(0);
+    printf("tiempo:       %d\n", t2 - t1);
+    return 0;
+}
+*/
