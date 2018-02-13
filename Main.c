@@ -123,34 +123,27 @@ struct Celda** InicioMatriz(unsigned FillMe0,unsigned FillMe1)
     return arr;
 }
 
-/**
- * inicializarMatriz funcion que crea la matriz de tamaño r c e inicializa la primera fila y columna con valores negativos descendentes.
- * @author Sara
- * @date 12/2/2018
- * @param unsigned r rows
- * @param unsigned c cols
- * @out arr matriz con los valores negativos
- */
+// inicializarMatriz funcion que crea la matriz de tamaño r c e inicializa la primera fila y columna con valores negativos descendentes.
+// @author Sara
+// @date 12/2/2018
+// @param unsigned r rows
+// @param unsigned c cols
+// @return arr matriz con los valores negativos
 struct Celda** inicializarMatriz(unsigned r, unsigned c)
 {
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
-    int negativo = -2;
     
     //Casos base posicion:  r = 0, c = 0
-    //                      r = 1, c = 0
-    //                      r = 0, c = 1
-    arr[0][0] = 0;
-    arr[1][0] = -2;
-    arr[0][1] = -2;
+    arr[0][0].score = 0;
     
-    for(unsigned i = 2; i<r; i++)
+    for(unsigned i = 1 ; i<r; i++)
     {
-        for(unsigned j = 2; j<c; j++)
-        {
-            arr[i][0] = negativo*2;
-            arr[0][j] = negativo*2;
-            negativo *= 2;
-        }
+        arr[i][0].score = -i;
+    }
+    
+    for(unsigned i = 1 ; i<c; i++)
+    {
+        arr[0][i].score = -i;
     }
     
     return arr;
