@@ -14,7 +14,25 @@ char* CargarFichero(char*);
 struct Celda** InicioMatriz(unsigned,unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
-int GetRuta(struct Celda**);
+int GetRuta(struct Celda**,unsigned,unsigned);
+void AuxGetRuta(struct Celda**, int, int, int, int*)
+unsigned max(unsigned arg1, unsigned arg2)
+{
+    if(arg1>arg2){
+        return arg1;
+    }
+    else
+        return arg2;
+}
+int max(int arg1, int arg2)
+{
+    if(arg1>arg2){
+        return arg1;
+    }
+    else
+        return arg2;
+}
+
 void Mayus(char * temp) {
   char * name;
   name = strtok(temp,":");
@@ -133,4 +151,46 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     matrix[i][j].diag    = (C>=B && C>=A);
     
     matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
+}
+
+/**
+ * GetRuta Funcion de backtraking para saber cual es el mayor indice de coincidencias. Aumenta la cuenta si encuentra diagonales.
+ * @author Paul
+ * @date 12/2/2018
+ * @param matrix Matriz de structs sobre la que se opera. In/Out
+ * @param i Indice de fila inicial (Debe ser la ultima)
+ * @param j Indice de columna inicial (Debe ser la ultima)
+ */
+int GetRuta(struct Celda** matrix, unsigned i, unsigned j)
+{
+	unsigned maximo = 0;
+	
+	AuxGetRuta(matrix, i, j, 0, &maximo);
+	
+	return maximo;
+}
+
+void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+{ 
+	if(i == 0 || j == 0)
+	{
+		*maximo = max(cont, *maximo);
+	}
+	else
+	{
+		if(matrix[i][j].lateral)
+        {
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+        }
+		if(matrix[i][j].arriba)
+        {
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+        }
+		if(matrix[i][j].diag)
+		{
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
+	}
+	
+    return;
 }

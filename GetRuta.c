@@ -84,7 +84,7 @@ void AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
     printf("Valores actuales: cont %d   max %d\n", cont, *maximo);
     
     
-	if(i == 0 && j == 0)
+	if(i == 0 || j == 0)
 	{
 		*maximo = max(cont, *maximo);
 	}
@@ -92,11 +92,11 @@ void AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
 	{
 		if(matrix[i][j].lateral)
         {
-			AuxGetRuta(matrix, i - 1, j, cont + 1, maximo);
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			AuxGetRuta(matrix, i, j - 1, cont + 1, maximo);
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
 		if(matrix[i][j].diag)
 		{

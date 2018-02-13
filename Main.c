@@ -20,7 +20,8 @@ struct Celda** InicioMatriz(unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
-int GetRuta(struct Celda**);
+int GetRuta(struct Celda**,unsigned,unsigned);
+void AuxGetRuta(struct Celda**, int, int, int, int*)
 /*Maximo entre dos valores*/
 unsigned max(unsigned arg1, unsigned arg2)
 {
@@ -220,7 +221,44 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     */
 }
 
-int GetRuta(struct Celda** FillMe)
+/**
+ * GetRuta Funcion de backtraking para saber cual es el mayor indice de coincidencias. Aumenta la cuenta si encuentra diagonales.
+ * @author Paul
+ * @date 12/2/2018
+ * @param matrix Matriz de structs sobre la que se opera. In/Out
+ * @param i Indice de fila inicial (Debe ser la ultima)
+ * @param j Indice de columna inicial (Debe ser la ultima)
+ */
+int GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
-    return 0;
+	unsigned maximo = 0;
+	
+	AuxGetRuta(matrix, i, j, 0, &maximo);
+	
+	return maximo;
+}
+
+void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+{ 
+	if(i == 0 || j == 0)
+	{
+		*maximo = max(cont, *maximo);
+	}
+	else
+	{
+		if(matrix[i][j].lateral)
+        {
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+        }
+		if(matrix[i][j].arriba)
+        {
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+        }
+		if(matrix[i][j].diag)
+		{
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
+	}
+	
+    return;
 }
