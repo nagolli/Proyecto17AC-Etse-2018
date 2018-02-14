@@ -20,7 +20,7 @@ struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
-unsigned AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
+void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
 /*Maximo entre dos valores*/
 unsigned maxU(unsigned arg1, unsigned arg2)
 {
@@ -238,33 +238,35 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 	return maximo;
 }
 
-unsigned AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
 {
-    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
-    //system("PAUSE");
     
+    if(cont<matrix[i][j].score || ((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    {
+        return;
+    }
+    
+    matrix[i][j].score=cont;
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
 	}
-	else if(matrix[i][j].score<=cont)
+	else 
 	{
-        unsigned A=0,B=0,C=0;
         
 	    if(matrix[i][j].diag)
 		{
-			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
 		}
 		if(matrix[i][j].lateral)
         {
-			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return cont;
+    return;
 }

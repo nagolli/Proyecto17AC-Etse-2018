@@ -20,7 +20,7 @@ struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
-unsigned AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
+void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
 /*Maximo entre dos valores*/
 unsigned maxU(unsigned arg1, unsigned arg2)
 {
@@ -83,6 +83,8 @@ int main( int argc, char *argv[] )
     if(argc >= 3 && argc <=7)
     {
         printf("%s comparado con %s\n",argv[1],argv[2]);
+        printf("Tamanos: %d %d\n",T1*100,T2*100);
+        printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
         //time_t t1, t2, t3, t4;
         //t1 = time(0);
         char* string1=CargarFichero(argv[1],T1,I1);
@@ -144,13 +146,13 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
  	}
  	else
     {
-        fgets(caracteres,1000,archivo); //Primera linea
+        fgets(caracteres,100,archivo); //Primera linea
         for(i=0;i<inicio;i++)
-            fgets(caracteres,1000,archivo);
+            fgets(caracteres,100,archivo);
         i=tamano;
  	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
  	    {
- 		fgets(caracteres,1000,archivo);
+ 		fgets(caracteres,100,archivo);
  		strcat(cadena, caracteres);
  	    }
     }
@@ -285,33 +287,37 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 	return maximo;
 }
 
-unsigned AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
 {
-    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
-    //system("PAUSE");
+    //Comprobante de poda, 2 casos cortan el camino
+    // 1º Si el camino ya ha pasado por esa posicion, y lo ha hecho con un mejor camino, deja de comprobar el camino.
+    // 2º Si el algoritmo no puede conseguir tantas diagonales como el mejor valora partir del punto actual, corta.
+    if(cont<matrix[i][j].score || ((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    {
+        return;
+    }
     
+    matrix[i][j].score=cont;
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
 	}
-	else if(matrix[i][j].score<=cont)
+	else 
 	{
-        unsigned A=0,B=0,C=0;
         
 	    if(matrix[i][j].diag)
 		{
-			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
 		}
 		if(matrix[i][j].lateral)
         {
-			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return cont;
+    return;
 }

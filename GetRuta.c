@@ -12,8 +12,8 @@ struct Celda
     bool lateral;
 };
 
-int GetRuta(struct Celda**, int, int);
-unsigned AuxGetRuta(struct Celda**, int, int, int, int *);
+unsigned GetRuta(struct Celda**, unsigned, unsigned);
+void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned *);
 
 int maxU(int arg1, int arg2)
 {
@@ -70,7 +70,7 @@ int main( )
  * @param row Posicion en la fila de la celda que comprobaremos
  * @param col Posicion en la columna de la celda que comprobaremos
  */
-int GetRuta(struct Celda** matrix, int i, int j)
+unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
 	
@@ -84,33 +84,39 @@ int GetRuta(struct Celda** matrix, int i, int j)
 	return maximo;
 }
 
-unsigned AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
+void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
 {
     //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
     //system("PAUSE");
     
+    if(cont<matrix[i][j].score || ((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    {
+        printf("Valores podados: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
+        return;
+    }
+    
+    matrix[i][j].score=cont;
+    printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
 	}
-	else if(matrix[i][j].score<=cont)
+	else 
 	{
-        unsigned A=0,B=0,C=0;
         
 	    if(matrix[i][j].diag)
 		{
-			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
 		}
 		if(matrix[i][j].lateral)
         {
-			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return cont;
+    return;
 }
