@@ -13,9 +13,9 @@ struct Celda
 };
 
 int GetRuta(struct Celda**, int, int);
-void AuxGetRuta(struct Celda**, int, int, int, int *);
+unsigned AuxGetRuta(struct Celda**, int, int, int, int *);
 
-int max(int arg1, int arg2)
+int maxU(int arg1, int arg2)
 {
     if(arg1>arg2){
         if(arg1==0)
@@ -72,37 +72,45 @@ int main( )
  */
 int GetRuta(struct Celda** matrix, int i, int j)
 {
-	int maximo = 0;
+	unsigned maximo = 0;
+	
+    unsigned x,y;
+	for(x=0;x<=i;x++)
+	   for(y=0;y<=i;y++)
+	       matrix[x][y].score=0;
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
 	return maximo;
 }
 
-void AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
+unsigned AuxGetRuta(struct Celda** matrix, int i, int j, int cont, int *maximo)
 {
-    printf("Valores actuales: cont %d   max %d\n", cont, *maximo);
-    
+    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
+    //system("PAUSE");
     
 	if(i == 0 || j == 0)
 	{
-		*maximo = max(cont, *maximo);
+		*maximo = maxU(cont, *maximo);
 	}
-	else
+	else if(matrix[i][j].score<=cont)
 	{
+        unsigned A=0,B=0,C=0;
+        
+	    if(matrix[i][j].diag)
+		{
+			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
 		if(matrix[i][j].lateral)
         {
-			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-		if(matrix[i][j].diag)
-		{
-			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
-		}
+        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return;
+    return cont;
 }

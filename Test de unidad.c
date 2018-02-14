@@ -19,8 +19,8 @@ char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
-int GetRuta(struct Celda**,unsigned,unsigned);
-void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
+unsigned GetRuta(struct Celda**,unsigned,unsigned);
+unsigned AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
 /*Maximo entre dos valores*/
 unsigned maxU(unsigned arg1, unsigned arg2)
 {
@@ -52,13 +52,20 @@ void Mayus(char * temp) {
 
 int main()
 { 
-    char* string1=CargarFichero("UT1.fa",1000,0);
-    char* string2=CargarFichero("UT2.fa",1000,0);
+    char* string1=CargarFichero("UT1.fa",1,0);
+    char* string2=CargarFichero("UT2.fa",1,0);
+    printf("Cadenas leidas\n");
+    if(strlen(string1)==0 || strlen(string2)==0)
+    {
+        printf("Una cadena esta vacia\n");
+        exit(2);
+    }
+        
     struct Celda **Matriz;
     Matriz=inicializarMatriz(strlen(string1),strlen(string2));
-    
+    printf("Matriz iniciada\n");
     CompletarMatriz(string1,string2,Matriz);
-    
+    printf("Matriz completada\n");
     int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
     
     printf("Resultado, si es un 1 es un exito: %d", resultado == 5);
@@ -75,36 +82,37 @@ int main()
  */
 char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 {
+    tamano*=100;
+    inicio*=100;
     FILE *archivo;
  	unsigned i;
- 	char caracteres[1000];
- 	char *cadena=malloc(1000*tamano);   //Limite de 10 millones de caracteres
+ 	char caracteres[100];
+ 	char *cadena=malloc(tamano);   
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
- 	
  	if (archivo == NULL)
  	{
  	    printf("%s no existe",NombreFichero);
  		exit(1);
  	}
  	else
-        {
+    {
         fgets(caracteres,1000,archivo); //Primera linea
         for(i=0;i<inicio;i++)
             fgets(caracteres,1000,archivo);
-        i=1000*tamano;
+        i=tamano;
  	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
  	    {
  		fgets(caracteres,1000,archivo);
  		strcat(cadena, caracteres);
  	    }
-        }
+    }
         Mayus(cadena);
 	return cadena;
 }
 
 
-// inicializarMatriz funcion que crea la matriz de tamaÃ±o r c e inicializa la primera fila y columna con valores negativos descendentes.
+// inicializarMatriz funcion que crea la matriz de tamano r c e inicializa la primera fila y columna con valores negativos descendentes.
 // @author Sara
 // @date 12/2/2018
 // @param unsigned r rows
@@ -116,7 +124,6 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
     for (i = 0; i <= r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
-    
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
     arr[0][0].lateral = 0;
@@ -138,7 +145,6 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
         arr[0][i].arriba = 0;
         arr[0][i].diag = 0;
     }
-    
     return arr;
 }
 
@@ -158,8 +164,8 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
     unsigned j;
     unsigned size1=strlen(string1);
     unsigned size2=strlen(string2);
-    for(i=1;i<=size1;i++)
-        for(j=1;j<=size2;j++)
+    for(i=1;i<=size1;++i)
+        for(j=1;j<=size2;++j)
             //El argumento de calcular casilla es cierto si ambos strings coinciden o uno de ellos es N
             //Recordar que el tamano de la matriz es 1 mayor que los strings, y estos se alinean con el final.
             {
@@ -211,41 +217,54 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 /**
  * GetRuta Funcion de backtraking para saber cual es el mayor indice de coincidencias. Aumenta la cuenta si encuentra diagonales.
  * @author Paul
+ * @author Nacho en la optimización
  * @date 12/2/2018
+ * @date 14/2/2018 en optimizacion
  * @param matrix Matriz de structs sobre la que se opera. In/Out
  * @param i Indice de fila inicial (Debe ser la ultima)
  * @param j Indice de columna inicial (Debe ser la ultima)
  */
-int GetRuta(struct Celda** matrix, unsigned i, unsigned j)
+unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
+	
+    unsigned x,y;
+	for(x=0;x<=i;x++)
+	   for(y=0;y<=i;y++)
+	       matrix[x][y].score=0;
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
 	return maximo;
 }
 
-void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
-{ 
+unsigned AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+{
+    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
+    //system("PAUSE");
+    
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
 	}
-	else
+	else if(matrix[i][j].score<=cont)
 	{
+        unsigned A=0,B=0,C=0;
+        
+	    if(matrix[i][j].diag)
+		{
+			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
 		if(matrix[i][j].lateral)
         {
-			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-		if(matrix[i][j].diag)
-		{
-			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
-		}
+        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return;
+    return cont;
 }

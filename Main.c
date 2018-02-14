@@ -19,8 +19,8 @@ char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
-int GetRuta(struct Celda**,unsigned,unsigned);
-void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
+unsigned GetRuta(struct Celda**,unsigned,unsigned);
+unsigned AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned*);
 /*Maximo entre dos valores*/
 unsigned maxU(unsigned arg1, unsigned arg2)
 {
@@ -83,11 +83,11 @@ int main( int argc, char *argv[] )
     if(argc >= 3 && argc <=7)
     {
         printf("%s comparado con %s\n",argv[1],argv[2]);
-        time_t t1, t2, t3, t4;
-        t1 = time(0);
+        //time_t t1, t2, t3, t4;
+        //t1 = time(0);
         char* string1=CargarFichero(argv[1],T1,I1);
         char* string2=CargarFichero(argv[2],T2,I2);
-                                                                            printf("Fin construccion cadenas\n");
+        //                                                                    printf("Fin construccion cadenas\n");
         struct Celda **Matriz;
         if(strlen(string1)==0 || strlen(string2)==0)
         {
@@ -96,18 +96,19 @@ int main( int argc, char *argv[] )
         }
                                                                             printf("Lectura correcta \n");
         Matriz=inicializarMatriz(strlen(string1),strlen(string2));
-        t2 = time(0);
+        //t2 = time(0);
+        //printf("Inicializado:       %d\n", t2 - t1);
                                                                             printf("Matriz iniciada\n");
         CompletarMatriz(string1,string2,Matriz);
-        t3 = time(0);
+        //t3 = time(0);
+        //printf("Creacion de matriz: %d\n", t3 - t2);
                                                                             printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
                                                                             printf("Ruta calculada\n");
-        t4 = time(0);
-        printf("Inicializado:       %d\n", t2 - t1);
-        printf("Creacion de matriz: %d\n", t3 - t2);
-        printf("Backtracking:       %d\n", t4 - t3);
-        printf("Total:              %d\n", t4 - t1);
+        //t4 = time(0);
+        //printf("Backtracking:       %d\n", t4 - t3);
+
+        //printf("Total:              %d\n", t4 - t1);
         printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
     }
     else
@@ -131,7 +132,7 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
     tamano*=100;
     inicio*=100;
     FILE *archivo;
- 	int i;
+ 	unsigned i;
  	char caracteres[100];
  	char *cadena=malloc(tamano);   
  	strcpy (cadena, ""); 
@@ -263,41 +264,54 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 /**
  * GetRuta Funcion de backtraking para saber cual es el mayor indice de coincidencias. Aumenta la cuenta si encuentra diagonales.
  * @author Paul
+ * @author Nacho en la optimización
  * @date 12/2/2018
+ * @date 14/2/2018 en optimizacion
  * @param matrix Matriz de structs sobre la que se opera. In/Out
  * @param i Indice de fila inicial (Debe ser la ultima)
  * @param j Indice de columna inicial (Debe ser la ultima)
  */
-int GetRuta(struct Celda** matrix, unsigned i, unsigned j)
+unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
+	
+    unsigned x,y;
+	for(x=0;x<=i;x++)
+	   for(y=0;y<=i;y++)
+	       matrix[x][y].score=0;
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
 	return maximo;
 }
 
-void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
-{ 
+unsigned AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+{
+    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
+    //system("PAUSE");
+    
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
 	}
-	else
+	else if(matrix[i][j].score<=cont)
 	{
+        unsigned A=0,B=0,C=0;
+        
+	    if(matrix[i][j].diag)
+		{
+			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+		}
 		if(matrix[i][j].lateral)
         {
-			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
-		if(matrix[i][j].diag)
-		{
-			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
-		}
+        matrix[i][j].score=maxU(maxU(A,B),C);
 	}
 	
-    return;
+    return cont;
 }
