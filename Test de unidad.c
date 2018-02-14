@@ -15,7 +15,7 @@ struct Celda
     bool lateral;
 };
 
-char* CargarFichero(char*);
+char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
@@ -52,8 +52,8 @@ void Mayus(char * temp) {
 
 int main()
 { 
-    char* string1=CargarFichero("UT1.fa");
-    char* string2=CargarFichero("UT2.fa");
+    char* string1=CargarFichero("UT1.fa",1000,0);
+    char* string2=CargarFichero("UT2.fa",1000,0);
     struct Celda **Matriz;
     Matriz=inicializarMatriz(strlen(string1),strlen(string2));
     
@@ -73,12 +73,12 @@ int main()
  * @param NombreFichero nombre del fichero, incluida extension y ruta relativa
  * @out string con el contenido en mayusculas
  */
-char* CargarFichero(char* NombreFichero)
+char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 {
     FILE *archivo;
- 	
+ 	unsigned i;
  	char caracteres[1000];
- 	char *cadena=malloc(10000000);   //Limite de 10 millones de caracteres
+ 	char *cadena=malloc(1000*tamano);   //Limite de 10 millones de caracteres
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
  	
@@ -90,7 +90,10 @@ char* CargarFichero(char* NombreFichero)
  	else
         {
         fgets(caracteres,1000,archivo); //Primera linea
- 	    while (feof(archivo) == 0 && strlen(cadena)<9999000) //Hasta fin de archivo o memoria
+        for(i=0;i<inicio;i++)
+            fgets(caracteres,1000,archivo);
+        i=1000*tamano;
+ 	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
  	    {
  		fgets(caracteres,1000,archivo);
  		strcat(cadena, caracteres);

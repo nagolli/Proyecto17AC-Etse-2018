@@ -15,7 +15,7 @@ struct Celda
     bool lateral;
 };
 
-char* CargarFichero(char*);
+char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
@@ -52,32 +52,70 @@ void Mayus(char * temp) {
 
 int main( int argc, char *argv[] ) 
 { 
-    if(argc == 3)
+    unsigned T1,T2,I1,I2;
+    switch(argc)
+    {
+        case 3: //Ambos desde el principio hasta lo que coja
+            T1=100;T2=100;I1=0;I2=0;
+            
+        break;
+        case 4: //Ambos con Tamaño arg[3]
+            T1=atoi(argv[3]);T2=T1;I1=0;I2=0;
+        break;
+        case 5: //Cada uno con Tamaño arg[3] y arg[4]
+            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=0;I2=0;
+        break;
+        case 6: //Cada uno con Tamaño arg[3] y arg[4] empezando desde arg[5]
+            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=atoi(argv[5]);I2=I1;
+        break;
+        case 7: //Cada uno con Tamaño arg[3] y arg[4] empezando desde arg[5] y arg[6]
+            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=atoi(argv[5]);I2=atoi(argv[6]);
+        break;
+        default: //Instrucciones de uso
+        printf("Error en introduccion de datos:\n Se pueden introducir entre 2 y 6 argumentos:\n2 argumentos:\n   Fichero_1 Fichero_2\n");
+        printf("3 argumentos:\n   Fichero_1 Fichero_2 Tamano_maximo\n");       
+        printf("4 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2\n");  
+        printf("5 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_Cadenas\n");  
+        printf("6 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_C1 Inicio_C2\n");  
+        printf("Tamano e inicio escalados: 1:100\n");
+    }
+
+    if(argc >= 3 && argc <=7)
     {
         printf("%s comparado con %s\n",argv[1],argv[2]);
         time_t t1, t2, t3, t4;
         t1 = time(0);
-        char* string1=CargarFichero(argv[1]);
-        char* string2=CargarFichero(argv[2]);
+        char* string1=CargarFichero(argv[1],T1,I1);
+        char* string2=CargarFichero(argv[2],T2,I2);
+                                                                            printf("Fin construccion cadenas\n");
         struct Celda **Matriz;
+        if(strlen(string1)==0 || strlen(string2)==0)
+        {
+            printf("Una cadena esta vacia");
+            exit(2);
+        }
+                                                                            printf("Lectura correcta \n");
         Matriz=inicializarMatriz(strlen(string1),strlen(string2));
         t2 = time(0);
+                                                                            printf("Matriz iniciada\n");
         CompletarMatriz(string1,string2,Matriz);
         t3 = time(0);
+                                                                            printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
+                                                                            printf("Ruta calculada\n");
         t4 = time(0);
         printf("Inicializado:       %d\n", t2 - t1);
         printf("Creacion de matriz: %d\n", t3 - t2);
         printf("Backtracking:       %d\n", t4 - t3);
         printf("Total:              %d\n", t4 - t1);
-        printf("Coincidencia(porc): %d\n", 100*resultado/maxU(maxU(strlen(string1),strlen(string2)),1));
+        printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
     }
     else
     {
-        printf("Requiere 2 argumentos\n");
         exit(3);
     }
     printf("Fin");
+    exit(0);
     return 0;
 }
 
@@ -88,35 +126,39 @@ int main( int argc, char *argv[] )
  * @param NombreFichero nombre del fichero, incluida extension y ruta relativa
  * @out string con el contenido en mayusculas
  */
-char* CargarFichero(char* NombreFichero)
+char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 {
+    tamano*=100;
+    inicio*=100;
     FILE *archivo;
- 	
- 	char caracteres[1000];
- 	char *cadena=malloc(10000000);   //Limite de 10 millones de caracteres
+ 	int i;
+ 	char caracteres[100];
+ 	char *cadena=malloc(tamano);   
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
- 	
  	if (archivo == NULL)
  	{
  	    printf("%s no existe",NombreFichero);
  		exit(1);
  	}
  	else
-        {
+    {
         fgets(caracteres,1000,archivo); //Primera linea
- 	    while (feof(archivo) == 0 && strlen(cadena)<9999000) //Hasta fin de archivo o memoria
+        for(i=0;i<inicio;i++)
+            fgets(caracteres,1000,archivo);
+        i=tamano;
+ 	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
  	    {
  		fgets(caracteres,1000,archivo);
  		strcat(cadena, caracteres);
  	    }
-        }
+    }
         Mayus(cadena);
 	return cadena;
 }
 
 
-// inicializarMatriz funcion que crea la matriz de tamaÃ±o r c e inicializa la primera fila y columna con valores negativos descendentes.
+// inicializarMatriz funcion que crea la matriz de tamano r c e inicializa la primera fila y columna con valores negativos descendentes.
 // @author Sara
 // @date 12/2/2018
 // @param unsigned r rows
@@ -128,7 +170,6 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
     for (i = 0; i <= r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
-    
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
     arr[0][0].lateral = 0;
@@ -150,7 +191,6 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
         arr[0][i].arriba = 0;
         arr[0][i].diag = 0;
     }
-    
     return arr;
 }
 
