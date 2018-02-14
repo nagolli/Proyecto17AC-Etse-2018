@@ -277,11 +277,6 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
 	
-    unsigned x,y;
-	for(x=0;x<=i;x++)
-	   for(y=0;y<=i;y++)
-	       matrix[x][y].score=0;
-	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
 	return maximo;
@@ -289,10 +284,9 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 
 void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
 {
-    //Comprobante de poda, 2 casos cortan el camino
-    // 1º Si el camino ya ha pasado por esa posicion, y lo ha hecho con un mejor camino, deja de comprobar el camino.
-    // 2º Si el algoritmo no puede conseguir tantas diagonales como el mejor valora partir del punto actual, corta.
-    if(cont<matrix[i][j].score || ((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    //Comprobante de poda
+    //Si el algoritmo no puede conseguir tantas diagonales como el mejor valora partir del punto actual, corta.
+    if(((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
     {
         return;
     }

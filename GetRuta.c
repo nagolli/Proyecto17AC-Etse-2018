@@ -74,11 +74,6 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
 	
-    unsigned x,y;
-	for(x=0;x<=i;x++)
-	   for(y=0;y<=i;y++)
-	       matrix[x][y].score=0;
-	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
 	return maximo;
@@ -89,7 +84,7 @@ void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, un
     //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
     //system("PAUSE");
     
-    if(cont<matrix[i][j].score || ((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    if(((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
     {
         printf("Valores podados: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
         return;
