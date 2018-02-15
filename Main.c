@@ -50,6 +50,17 @@ void Mayus(char * temp) {
     s++;
   }}
 
+/**
+ * Main Lleva control del orden de ejecucion de las funciones del algoritmo y la entrada de parametros
+ * @author Lidia y Nacho
+ * @date 8/2/2018
+ * @param Nombre o ruta de Fichero1 (Necesario)
+ * @param Nombre o ruta de Fichero2 (Necesario)
+ * @param Tamano de cadena de fichero1 (Opcional o ambos ficheros si falta siguiente parametro)
+ * @param Tamano de cadena de Fichero2 (Opcional)
+ * @param Inicio de cadena de Fichero1 (Opcional o ambos ficheros si falta siguiente parametro)
+ * @param Inicio de cadena de Fichero2 (Opcional)
+ */
 int main( int argc, char *argv[] ) 
 { 
     unsigned T1,T2,I1,I2;
@@ -290,8 +301,6 @@ void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, un
     {
         return;
     }
-    
-    matrix[i][j].score=cont;
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);

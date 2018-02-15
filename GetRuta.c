@@ -90,7 +90,6 @@ void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, un
         return;
     }
     
-    matrix[i][j].score=cont;
     printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
 	if(i == 0 || j == 0)
 	{
