@@ -215,7 +215,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
  * @date 7/2/2018
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
- * @param matrix Matriz de Celdas, su tamaño debe ser el de las cadenas de texto +1
+ * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
  */
 void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
 {
@@ -252,8 +252,8 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     
     int A = matrix[i-1][j].score - 1;
     int B = matrix[i][j-1].score - 1;
-    int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
-    
+    int C = (matrix[i-1][j-1].score-2) + (igual<<2); //C= arg + (argB*(Match-Fallo))+Fallo
+    // <<2 es equivalente a *4 (Igual a 2--2) pero es mas rapido
     
     
     //Busqueda de que caminos maximizan
