@@ -96,8 +96,10 @@ int main( int argc, char *argv[] )
         printf("%s comparado con %s\n",argv[1],argv[2]);
         printf("Tamanos: %d %d\n",T1*100,T2*100);
         printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
-        //time_t t1, t2, t3, t4;
+        struct timespec t1,t2,t3,t4;
+        double total;
         //t1 = time(0);
+        clock_gettime(CLOCK_REALTIME, &t1);
         char* string1=CargarFichero(argv[1],T1,I1);
         char* string2=CargarFichero(argv[2],T2,I2);
         //                                                                    printf("Fin construccion cadenas\n");
@@ -107,21 +109,33 @@ int main( int argc, char *argv[] )
             printf("Una cadena esta vacia");
             exit(2);
         }
-                                                                            printf("Lectura correcta \n");
+        //                                                                    printf("Lectura correcta \n");
         Matriz=inicializarMatriz(strlen(string1),strlen(string2));
         //t2 = time(0);
-        //printf("Inicializado:       %d\n", t2 - t1);
-                                                                            printf("Matriz iniciada\n");
+        clock_gettime(CLOCK_REALTIME, &t2);
+        total = (t2.tv_sec - t1.tv_sec)
+			+ (t2.tv_nsec - t1.tv_nsec) / (10^9);
+        printf("Inicializado:       %lf\n", total / 1000);
+        //                                                                    printf("Matriz iniciada\n");
         CompletarMatriz(string1,string2,Matriz);
         //t3 = time(0);
-        //printf("Creacion de matriz: %d\n", t3 - t2);
-                                                                            printf("Matriz completa\n");
+        clock_gettime(CLOCK_REALTIME, &t3);
+                clock_gettime(CLOCK_REALTIME, &t2);
+        total = (t3.tv_sec - t2.tv_sec)
+			+ (t3.tv_nsec - t2.tv_nsec) / (10^9);
+        printf("Creacion de matriz: %lf\n", total / 1000);
+        //                                                                    printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
-                                                                            printf("Ruta calculada\n");
+        //                                                                    printf("Ruta calculada\n");
         //t4 = time(0);
-        //printf("Backtracking:       %d\n", t4 - t3);
-
-        //printf("Total:              %d\n", t4 - t1);
+        clock_gettime(CLOCK_REALTIME, &t4);
+                clock_gettime(CLOCK_REALTIME, &t2);
+        total = (t4.tv_sec - t3.tv_sec)
+			+ (t4.tv_nsec - t3.tv_nsec) / (10^9);
+        printf("Backtracking:       %lf\n", total / 1000);
+        total = (t4.tv_sec - t1.tv_sec)
+			+ (t4.tv_nsec - t1.tv_nsec) / (10^9);
+        printf("Total:              %lf\n", total / 1000);
         printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
     }
     else
@@ -279,7 +293,7 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
  * @author Paul
  * @author Nacho en la optimización
  * @date 12/2/2018
- * @date 21/2/2018 en optimizacion
+ * @date 14/2/2018 en optimizacion
  * @param matrix Matriz de structs sobre la que se opera. In/Out
  * @param i Indice de fila inicial (Debe ser la ultima)
  * @param j Indice de columna inicial (Debe ser la ultima)
@@ -287,9 +301,6 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
-	
-	//Reinicializado de los scores, ahora mediremos la distancia a la esquina 0,0
-	//El valor -1 representa dato desconocido
 	unsigned x,y;
 	for(x=0;x<=i;x++)
 	   for(y=0;y<=j;y++)
@@ -304,19 +315,15 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned *maximo)
 {
     int A=-1,B=-1,C=-1;
-    
-    //Poda, impide repetición de celdas si ya ha calculado el camino
     if(matrix[i][j].score>=0)
     {
         return matrix[i][j].score;
     }
-    //Poda, impide recorrer un nuevo camino si no hay posibilidad de superar la mejor marca
     if((cont+i<*maximo || cont+j<*maximo)&&(*maximo>0))
     {
         matrix[i][j].score=0;
         return 0;
     }
-    //Caso base
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
@@ -327,7 +334,6 @@ int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned
 	{
 	    if(matrix[i][j].diag)
 		{
-		    //En las diagonales se añade distancia si existen
 			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo)+1;
 		}
 		if(matrix[i][j].lateral)

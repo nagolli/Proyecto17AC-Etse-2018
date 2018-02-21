@@ -13,7 +13,15 @@ struct Celda
 };
 
 unsigned GetRuta(struct Celda**, unsigned, unsigned);
-void AuxGetRuta(struct Celda**, unsigned, unsigned, unsigned, unsigned *);
+int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned *);
+int maxI(int arg1, int arg2)
+{
+    if(arg1>arg2){
+        return arg1;
+    }
+    else
+        return arg2;
+}
 
 int maxU(int arg1, int arg2)
 {
@@ -73,44 +81,51 @@ int main( )
 unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
+	unsigned x,y;
+	for(x=0;x<=i;x++)
+	   for(y=0;y<=j;y++)
+	       matrix[x][y].score=-1;
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
+	
 	
 	return maximo;
 }
 
-void AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, unsigned cont, unsigned *maximo)
+int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned *maximo)
 {
-    //printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
-    //system("PAUSE");
-    
-    if(((cont+i<maximo || cont+j<maximo)&&(*maximo>0)))
+    int A=-1,B=-1,C=-1;
+    if(matrix[i][j].score>=0)
     {
-        printf("Valores podados: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
-        return;
+        return matrix[i][j].score;
     }
-    
-    printf("Valores actuales: %d %d val %d cont %d   max %d\n", i,j,matrix[i][j].score,cont, *maximo);
+    if((cont+i<*maximo || cont+j<*maximo)&&(*maximo>0))
+    {
+        matrix[i][j].score=0;
+        return 0;
+    }
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
+		matrix[i][j].score=0;
+		return 0;
 	}
 	else 
 	{
-        
 	    if(matrix[i][j].diag)
 		{
-			AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo);
+			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo)+1;
 		}
 		if(matrix[i][j].lateral)
         {
-			AuxGetRuta(matrix, i - 1, j, cont, maximo);
+			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].arriba)
         {
-			AuxGetRuta(matrix, i, j - 1, cont, maximo);
+			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
 	}
 	
-    return;
+	matrix[i][j].score=maxI(maxI(A,B),C);
+    return matrix[i][j].score;
 }
