@@ -120,7 +120,6 @@ int main( int argc, char *argv[] )
         CompletarMatriz(string1,string2,Matriz);
         //t3 = time(0);
         clock_gettime(CLOCK_REALTIME, &t3);
-                clock_gettime(CLOCK_REALTIME, &t2);
         total = (t3.tv_sec - t2.tv_sec)
 			+ (t3.tv_nsec - t2.tv_nsec) / (10^9);
         printf("Creacion de matriz: %lf\n", total / 1000);
@@ -129,7 +128,6 @@ int main( int argc, char *argv[] )
         //                                                                    printf("Ruta calculada\n");
         //t4 = time(0);
         clock_gettime(CLOCK_REALTIME, &t4);
-                clock_gettime(CLOCK_REALTIME, &t2);
         total = (t4.tv_sec - t3.tv_sec)
 			+ (t4.tv_nsec - t3.tv_nsec) / (10^9);
         printf("Backtracking:       %lf\n", total / 1000);
@@ -301,6 +299,9 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
+	
+	//Reinicializado de los scores, ahora mediremos la distancia a la esquina 0,0
+	//El valor -1 representa dato desconocido
 	unsigned x,y;
 	for(x=0;x<=i;x++)
 	   for(y=0;y<=j;y++)
@@ -315,15 +316,19 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned *maximo)
 {
     int A=-1,B=-1,C=-1;
+    
+    //Poda, impide repetición de celdas si ya ha calculado el camino
     if(matrix[i][j].score>=0)
     {
         return matrix[i][j].score;
     }
+    //Poda, impide recorrer un nuevo camino si no hay posibilidad de superar la mejor marca
     if((cont+i<*maximo || cont+j<*maximo)&&(*maximo>0))
     {
         matrix[i][j].score=0;
         return 0;
     }
+    //Caso base
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxU(cont, *maximo);
@@ -334,6 +339,7 @@ int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned
 	{
 	    if(matrix[i][j].diag)
 		{
+		    //En las diagonales se añade distancia si existen
 			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo)+1;
 		}
 		if(matrix[i][j].lateral)
