@@ -94,10 +94,10 @@ int main( int argc, char *argv[] )
         printf("%s comparado con %s\n",argv[1],argv[2]);
         printf("Tamanos: %d %d\n",T1*100,T2*100);
         printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
-        struct timespec t1,t2,t3,t4;
+        struct timeval t1,t2,t3,t4;
         double total;
         //t1 = time(0);
-        clock_gettime(CLOCK_REALTIME, &t1);
+        gettimeofday(&t1, NULL);
         char* string1=CargarFichero(argv[1],T1,I1);
         char* string2=CargarFichero(argv[2],T2,I2);
         //                                                                    printf("Fin construccion cadenas\n");
@@ -110,11 +110,11 @@ int main( int argc, char *argv[] )
         //                                                                    printf("Lectura correcta \n");
         Matriz=inicializarMatriz(strlen(string1),strlen(string2));
         //t2 = time(0);
-        clock_gettime(CLOCK_REALTIME, &t2);
+        gettimeofday(&t2, NULL);
         //                                                                    printf("Matriz iniciada\n");
         CompletarMatriz(string1,string2,Matriz);
         //t3 = time(0);
-        clock_gettime(CLOCK_REALTIME, &t3);
+        gettimeofday(&t3, NULL);
 
         //                                                                    printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
@@ -122,22 +122,18 @@ int main( int argc, char *argv[] )
         //t4 = time(0);
         
         
-        clock_gettime(CLOCK_REALTIME, &t4);
+        gettimeofday(&t4, NULL);
         
-        total = ( t2.tv_sec - t1.tv_sec )*1000
-          + ( t2.tv_nsec - t1.tv_nsec ) / (float)(1000000);
+        total = ((t2.tv_sec * 1000000 + t2.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
         printf("Inicializado:       %lf\n", total );
         
-        total = (t3.tv_sec - t2.tv_sec)*1000
-			+ (t3.tv_nsec - t2.tv_nsec) / (float)(1000000);
+        total = ((t3.tv_sec * 1000000 + t3.tv_usec)-(t2.tv_sec * 1000000 + t2.tv_usec));
         printf("Creacion de matriz: %lf\n", total );
         
-        total = (t4.tv_sec - t3.tv_sec)*1000
-			+ (t4.tv_nsec - t3.tv_nsec) / (float)(1000000);
+        total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t3.tv_sec * 1000000 + t3.tv_usec));
         printf("Backtracking:       %lf\n", total ) ;
         
-        total = (t4.tv_sec - t1.tv_sec)*1000
-			+ (t4.tv_nsec - t1.tv_nsec) / (float)(1000000);
+        total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
         printf("Total:              %lf\n", total );
         printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
     }
