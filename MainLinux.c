@@ -61,7 +61,6 @@ void Mayus(char * temp) {
  */
 int main( int argc, char *argv[] ) 
 { 
-    //printf("TAMANO %d", sizeof(struct Celda));
     unsigned T1,T2,I1,I2;
     switch(argc)
     {
