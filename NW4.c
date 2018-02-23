@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-int max(int arg1, int arg2)
+int maxI(int arg1, int arg2)
 {
     if(arg1>arg2){
         return arg1;
@@ -15,9 +15,7 @@ int max(int arg1, int arg2)
 struct Celda
 {
     int score;
-    bool diag;
-    bool arriba;
-    bool lateral;
+    short dir;
 };
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);    
 /*
@@ -53,16 +51,15 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     int B = matrix[i][j-1].score - 1;
     int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
     
-    matrix[i][j].lateral = (A>=B && A>=C);
-    matrix[i][j].arriba  = (B>=A && B>=C);
-    matrix[i][j].diag    = (C>=B && C>=A);
+    //Calculo de la dirección como un array de booleanos
+    int D=0;
+    D += (A>=B && A>=C)<<1;    //Vertical en 1a posicion
+    D += (B>=A && B>=C); //Horizontal en 2a posicion
+    D += (C>=B && C>=A)<<2; //Diagonal en 3a posicion
+    matrix[i][j].dir = D;
     
-    //Version sin IF
-    matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
-    //Version con IF
-    /*
-    matrix[i][j].score=max((A,B),C);
-    */
+    matrix[i][j].score=maxI(maxI(A,B),C);
+    
 }
 
 //Prueba de funcion calcular casilla
@@ -84,11 +81,12 @@ int main()
     printf("%d ", arr[1][0].score);
     printf("%d ", arr[0][1].score);
     printf("%d ", arr[1][1].score);
-    if(arr[1][1].lateral)
+    printf("%d ", arr[1][1].dir);
+    if((arr[1][1].dir&2)==1)
         printf("--");
-    if(arr[1][1].arriba)
+    if(arr[1][1].dir&1==1)
         printf("||");
-    if(arr[1][1].diag)
+    if(arr[1][1].dir>3)
         printf("//");
     return 0;
 }

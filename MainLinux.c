@@ -10,9 +10,7 @@
 struct Celda
 {
     int score;
-    bool diag;
-    bool arriba;
-    bool lateral;
+    char dir; //Array de booleanos
 };
 
 char* CargarFichero(char*,unsigned,unsigned);
@@ -63,6 +61,7 @@ void Mayus(char * temp) {
  */
 int main( int argc, char *argv[] ) 
 { 
+    //printf("TAMANO %d", sizeof(struct Celda));
     unsigned T1,T2,I1,I2;
     switch(argc)
     {
@@ -90,7 +89,6 @@ int main( int argc, char *argv[] )
         printf("6 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_C1 Inicio_C2\n");  
         printf("Tamano e inicio escalados: 1:100\n");
     }
-
     if(argc >= 3 && argc <=7)
     {
         printf("%s comparado con %s\n",argv[1],argv[2]);
@@ -113,27 +111,34 @@ int main( int argc, char *argv[] )
         Matriz=inicializarMatriz(strlen(string1),strlen(string2));
         //t2 = time(0);
         clock_gettime(CLOCK_REALTIME, &t2);
-        total = (t2.tv_sec - t1.tv_sec)
-			+ (t2.tv_nsec - t1.tv_nsec) / (10^9);
-        printf("Inicializado:       %lf\n", total / 1000);
         //                                                                    printf("Matriz iniciada\n");
         CompletarMatriz(string1,string2,Matriz);
         //t3 = time(0);
         clock_gettime(CLOCK_REALTIME, &t3);
-        total = (t3.tv_sec - t2.tv_sec)
-			+ (t3.tv_nsec - t2.tv_nsec) / (10^9);
-        printf("Creacion de matriz: %lf\n", total / 1000);
+
         //                                                                    printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
         //                                                                    printf("Ruta calculada\n");
         //t4 = time(0);
+        
+        
         clock_gettime(CLOCK_REALTIME, &t4);
-        total = (t4.tv_sec - t3.tv_sec)
-			+ (t4.tv_nsec - t3.tv_nsec) / (10^9);
-        printf("Backtracking:       %lf\n", total / 1000);
-        total = (t4.tv_sec - t1.tv_sec)
-			+ (t4.tv_nsec - t1.tv_nsec) / (10^9);
-        printf("Total:              %lf\n", total / 1000);
+        
+        total = ( t2.tv_sec - t1.tv_sec )*1000
+          + ( t2.tv_nsec - t1.tv_nsec ) / (float)(1000000);
+        printf("Inicializado:       %lf\n", total );
+        
+        total = (t3.tv_sec - t2.tv_sec)*1000
+			+ (t3.tv_nsec - t2.tv_nsec) / (float)(1000000);
+        printf("Creacion de matriz: %lf\n", total );
+        
+        total = (t4.tv_sec - t3.tv_sec)*1000
+			+ (t4.tv_nsec - t3.tv_nsec) / (float)(1000000);
+        printf("Backtracking:       %lf\n", total ) ;
+        
+        total = (t4.tv_sec - t1.tv_sec)*1000
+			+ (t4.tv_nsec - t1.tv_nsec) / (float)(1000000);
+        printf("Total:              %lf\n", total );
         printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
     }
     else
@@ -159,7 +164,7 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
     FILE *archivo;
  	unsigned i;
  	char caracteres[100];
- 	char *cadena=malloc(tamano);   
+ 	char *cadena=malloc(tamano);   //<--Origen error
  	strcpy (cadena, ""); 
  	archivo = fopen(NombreFichero,"r");
  	if (archivo == NULL)
@@ -198,24 +203,18 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
-    arr[0][0].lateral = 0;
-    arr[0][0].arriba = 0;
-    arr[0][0].diag = 0;
+    arr[0][0].dir = 0;
     
     for(i = 1 ; i<=r; i++)
     {
         arr[i][0].score = -i;
-        arr[i][0].lateral = 0;
-        arr[i][0].arriba = 0;
-        arr[i][0].diag = 0;
+        arr[i][0].dir=0;
     }
     
     for(i = 1 ; i<=c; i++)
     {
         arr[0][i].score = -i;
-        arr[0][i].lateral = 0;
-        arr[0][i].arriba = 0;
-        arr[0][i].diag = 0;
+        arr[0][i].dir=0;
     }
     return arr;
 }
@@ -258,32 +257,19 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
 void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 {
     // Constantes Match 2, -2 dismatch, -1 Hueco
-    
-    //Version sin IFs
-    //Calculo de los 3 valores
-    
     int A = matrix[i-1][j].score - 1;
     int B = matrix[i][j-1].score - 1;
-    int C = (matrix[i-1][j-1].score-2) + (igual<<2); //C= arg + (argB*(Match-Fallo))+Fallo
-    // <<2 es equivalente a *4 (Igual a 2--2) pero es mas rapido
+    int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
     
+    //Calculo de la dirección como un array de booleanos
+    int D=0;
+    D += (A>=B && A>=C)<<1;    //Vertical en 1a posicion
+    D += (B>=A && B>=C); //Horizontal en 2a posicion
+    D += (C>=B && C>=A)<<2; //Diagonal en 3a posicion
+    matrix[i][j].dir = D;
     
-    //Busqueda de que caminos maximizan
-    
-    matrix[i][j].lateral = (A>=B && A>=C);
-    matrix[i][j].arriba  = (B>=A && B>=C);
-    matrix[i][j].diag    = (C>=B && C>=A);
-    //Calculo del valor a partir de los valores y direcciones
-    
-    //Version sin IF
-    //Sumatorio (valor x Direccion) / Suma de direcciones
-    matrix[i][j].score=((A* matrix[i][j].lateral)+(B* matrix[i][j].arriba)+(C* matrix[i][j].diag)) / (matrix[i][j].arriba+matrix[i][j].lateral+matrix[i][j].diag);
-    
-    
-    //Version con IF
-    /*
     matrix[i][j].score=maxI(maxI(A,B),C);
-    */
+    
 }
 
 /**
@@ -299,7 +285,6 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 {
 	unsigned maximo = 0;
-	
 	//Reinicializado de los scores, ahora mediremos la distancia a la esquina 0,0
 	//El valor -1 representa dato desconocido
 	unsigned x,y;
@@ -309,14 +294,13 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
 	
-	
 	return maximo;
 }
 
 int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned *maximo)
-{
-    int A=-1,B=-1,C=-1;
+{    
     
+    int A=-1,B=-1,C=-1;
     //Poda, impide repetición de celdas si ya ha calculado el camino
     if(matrix[i][j].score>=0)
     {
@@ -331,22 +315,22 @@ int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned
     //Caso base
 	if(i == 0 || j == 0)
 	{
-		*maximo = maxU(cont, *maximo);
-		matrix[i][j].score=0;
+		*maximo = maxI(cont, *maximo);
+		matrix[i][j].score=0;;
 		return 0;
 	}
 	else 
 	{
-	    if(matrix[i][j].diag)
+	    if(matrix[i][j].dir>3)
 		{
 		    //En las diagonales se añade distancia si existen
 			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo)+1;
 		}
-		if(matrix[i][j].lateral)
+		if(matrix[i][j].dir==2||matrix[i][j].dir==3||matrix[i][j].dir==6||matrix[i][j].dir==7)
         {
 			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
-		if(matrix[i][j].arriba)
+		if(matrix[i][j].dir==1||matrix[i][j].dir==3||matrix[i][j].dir==5||matrix[i][j].dir==7)
         {
 			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
