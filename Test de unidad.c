@@ -190,17 +190,18 @@ void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix
 /**
  * CompletarMatriz funcion que gestiona los hilos para realizar el algoritmo Needleman-Wunsch en multiples procesadores
  * @author Nacho
- * @date 7/2/2018
+ * @date 28/2/2018
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
  * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
+ * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo debería ser la longitud del string.
  */
 void CompletarMatriz(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
 {
     unsigned i;
     unsigned p=omp_get_max_threads();
     unsigned *Posiciones=AsignarVector(strlen(string2),p*sobrecarga);
-    unsigned *locks =(unsigned *)malloc(p* sizeof(unsigned));
+    unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
     for (i = 0; i < p*sobrecarga; ++i)
         locks[i] = 0;
     
@@ -213,9 +214,6 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix, unsigned
             else
                 CalcularSubmatriz (*matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],*string1,*string2,*locks,(id+p*i));    
     }
-    
-    
-    
 }
 
 /**
