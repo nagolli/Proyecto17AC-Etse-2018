@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <omp.h>
 
 /*Struct con el valor de la celda y las direcciones
   Si las direcciones son verdadero, entonces ha heredado de esa direccion
@@ -15,7 +16,7 @@ struct Celda
 
 char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
-void CompletarMatriz(char*,char*,struct Celda**);
+void CompletarMatriz(char*,char*,struct Celda**,unsigned);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
@@ -62,7 +63,7 @@ int main()
     struct Celda **Matriz;
     Matriz=inicializarMatriz(strlen(string1),strlen(string2));
     printf("Matriz iniciada\n");
-    CompletarMatriz(string1,string2,Matriz);
+    CompletarMatriz(string1,string2,Matriz,1); //ACTUALMENTE SIN SOBRECARGA
     
     int i,j;
     printf("\n");
@@ -161,14 +162,15 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
 
 
 /**
- * CompletarMatriz funcion que calcula el algoritmo Needleman-Wunsch para una matriz
+ * CompletarMatrizSecuencial funcion que calcula el algoritmo Needleman-Wunsch para una matriz
  * @author Nacho
  * @date 7/2/2018
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
  * @param matrix Matriz de Celdas, su tamaño debe ser el de las cadenas de texto +1
  */
-void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
+ 
+void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix)
 {
     
     unsigned i;
@@ -183,6 +185,37 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
             CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
             }
     return;
+}
+
+/**
+ * CompletarMatriz funcion que gestiona los hilos para realizar el algoritmo Needleman-Wunsch en multiples procesadores
+ * @author Nacho
+ * @date 7/2/2018
+ * @param string1 Cadena de texto 1
+ * @param string2 Cadena de texto 2
+ * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
+ */
+void CompletarMatriz(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
+{
+    unsigned i;
+    unsigned p=omp_get_max_threads();
+    unsigned *Posiciones=AsignarVector(strlen(string2),p*sobrecarga);
+    unsigned *locks =(unsigned *)malloc(p* sizeof(unsigned));
+    for (i = 0; i < p*sobrecarga; ++i)
+        locks[i] = 0;
+    
+    #pragma omp parallel
+    {
+        unsigned id=omp_get_thread_num();
+        for(i=0;i<sobrecarga;i++)
+            if(id==0&&i==0)
+                CalcularSubmatriz (*matrix, 0,Posiciones[0],*string1,*string2,*locks,0);
+            else
+                CalcularSubmatriz (*matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],*string1,*string2,*locks,(id+p*i));    
+    }
+    
+    
+    
 }
 
 /**
