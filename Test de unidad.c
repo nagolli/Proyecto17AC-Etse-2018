@@ -17,6 +17,9 @@ struct Celda
 char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatriz(char*,char*,struct Celda**,unsigned);
+unsigned* AsignarVector(unsigned,unsigned);
+void CalcularSubMatriz(struct Celda**,unsigned,unsigned,char*,char*,unsigned*,unsigned);
+
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
@@ -210,11 +213,23 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix, unsigned
         unsigned id=omp_get_thread_num();
         for(i=0;i<sobrecarga;i++)
             if(id==0&&i==0)
-                CalcularSubmatriz (*matrix, 0,Posiciones[0],*string1,*string2,*locks,0);
+                CalcularSubMatriz (matrix, 1,Posiciones[0],string1,string2,locks,0);
             else
-                CalcularSubmatriz (*matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],*string1,*string2,*locks,(id+p*i));    
+                CalcularSubMatriz (matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],string1,string2,locks,(id+p*i));    
     }
 }
+
+unsigned* AsignarVector(unsigned tamano,unsigned p)
+{
+    return (unsigned *)malloc(p*sizeof(unsigned));
+}
+
+void CalcularSubMatriz(struct Celda** matrix,unsigned ji,unsigned jf,char* string1,char* string2,unsigned* locks,unsigned id)
+{
+    return;
+}
+
+
 
 /**
  * CalcularCasilla funcion que calcula el contenido de una casillo de la matriz para el algoritmo Needleman-Wunsch
