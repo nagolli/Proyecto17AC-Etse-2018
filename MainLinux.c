@@ -362,7 +362,7 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
     for (i = 0; i < p*sobrecarga; ++i)
         locks[i] = 0;
     
-    #pragma omp parallel
+    #pragma omp parallel private(i) shared(matrix,posiciones,string1,string2,locks,p,sobrecarga)
     {
         unsigned id=omp_get_thread_num();
         for(i=0;i<sobrecarga;i++)
