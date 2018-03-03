@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <omp.h>
 
 /*Struct con el valor de la celda y las direcciones
   Si las direcciones son verdadero, entonces ha heredado de esa direccion
@@ -13,9 +14,11 @@ struct Celda
     char dir; //Array de booleanos
 };
 
+void ImprimirInstruccionesDeUso();
 char* CargarFichero(char*,unsigned,unsigned);
-struct Celda** inicializarMatriz(unsigned, unsigned);
-void CompletarMatriz(char*,char*,struct Celda**);
+struct Celda** inicializarMatriz(unsigned, unsigned,unsigned);
+void CompletarMatrizSecuencial(char*,char*,struct Celda**);
+void CompletarMatrizOmp(char*,char*,struct Celda**,unsigned);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
@@ -52,6 +55,7 @@ void Mayus(char * temp) {
  * Main Lleva control del orden de ejecucion de las funciones del algoritmo y la entrada de parametros
  * @author Lidia y Nacho
  * @date 8/2/2018
+ * @date 3/3/2018 añadido OMP
  * @param Nombre o ruta de Fichero1 (Necesario)
  * @param Nombre o ruta de Fichero2 (Necesario)
  * @param Tamano de cadena de fichero1 (Opcional o ambos ficheros si falta siguiente parametro)
@@ -61,65 +65,109 @@ void Mayus(char * temp) {
  */
 int main( int argc, char *argv[] ) 
 { 
-    unsigned T1,T2,I1,I2;
-    switch(argc)
+    unsigned T1,T2,I1,I2, sobrecarga, modo;
+    char* nombre1;
+    char* nombre2;
+    bool lecturaCorrecta=1;
+    switch(atoi(argv[1]))
     {
-        case 3: //Ambos desde el principio hasta lo que coja
-            T1=100;T2=100;I1=0;I2=0;
+        case 2: //OpenMP
+        {
+            modo=2;
+            sobrecarga=atoi(argv[2]);
+            nombre1=argv[3];
+            nombre2=argv[4];
+            switch(argc)
+            {
+                case 5: //Ambos desde el principio hasta lo que coja
+                    T1=1000;T2=1000;I1=0;I2=0;
+                    
+                break;
+                case 6: //Ambos con Tamano arg[5]
+                    T1=atoi(argv[5]);T2=T1;I1=0;I2=0;
+                break;
+                case 7: //Cada uno con Tamano arg[5] y arg[6]
+                    T1=atoi(argv[5]);T2=atoi(argv[6]);I1=0;I2=0;
+                break;
+                case 8: //Cada uno con Tamano arg[5] y arg[6] empezando desde arg[7]
+                    T1=atoi(argv[5]);T2=atoi(argv[6]);I1=atoi(argv[7]);I2=I1;
+                break;
+                case 9: //Cada uno con Tamano arg[5] y arg[6] empezando desde arg[7] y arg[8]
+                    T1=atoi(argv[5]);T2=atoi(argv[6]);I1=atoi(argv[7]);I2=atoi(argv[8]);
+                break;
+                default: //Instrucciones de uso
+                ImprimirInstruccionesDeUso();
+                lecturaCorrecta=0;
+            }
+        }
+        break;
+        case 3: //MPI
+        {
             
+        }   
         break;
-        case 4: //Ambos con Tamaño arg[3]
-            T1=atoi(argv[3]);T2=T1;I1=0;I2=0;
+
+        case 1:
+        {
+            modo=1;
+            nombre1=argv[2];
+            nombre2=argv[3];
+            switch(argc)
+            {
+                case 4: //Ambos desde el principio hasta lo que coja
+                    T1=1000;T2=1000;I1=0;I2=0;
+                break;
+                case 5: //Ambos con Tamano arg[3]
+                    T1=atoi(argv[4]);T2=T1;I1=0;I2=0;
+                break;
+                case 6: //Cada uno con Tamano arg[3] y arg[4]
+                    T1=atoi(argv[4]);T2=atoi(argv[5]);I1=0;I2=0;
+                break;
+                case 7: //Cada uno con Tamano arg[3] y arg[4] empezando desde arg[5]
+                    T1=atoi(argv[4]);T2=atoi(argv[5]);I1=atoi(argv[6]);I2=I1;
+                break;
+                case 8: //Cada uno con Tamano arg[3] y arg[4] empezando desde arg[5] y arg[6]
+                    T1=atoi(argv[4]);T2=atoi(argv[5]);I1=atoi(argv[6]);I2=atoi(argv[7]);
+                break;
+                default: //Instrucciones de uso
+                ImprimirInstruccionesDeUso();
+                lecturaCorrecta=0;
+            }
+        }
         break;
-        case 5: //Cada uno con Tamaño arg[3] y arg[4]
-            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=0;I2=0;
+        default:
+        {
+            lecturaCorrecta=0;
+            ImprimirInstruccionesDeUso();
+        }
         break;
-        case 6: //Cada uno con Tamaño arg[3] y arg[4] empezando desde arg[5]
-            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=atoi(argv[5]);I2=I1;
-        break;
-        case 7: //Cada uno con Tamaño arg[3] y arg[4] empezando desde arg[5] y arg[6]
-            T1=atoi(argv[3]);T2=atoi(argv[4]);I1=atoi(argv[5]);I2=atoi(argv[6]);
-        break;
-        default: //Instrucciones de uso
-        printf("Error en introduccion de datos:\n Se pueden introducir entre 2 y 6 argumentos:\n2 argumentos:\n   Fichero_1 Fichero_2\n");
-        printf("3 argumentos:\n   Fichero_1 Fichero_2 Tamano_maximo\n");       
-        printf("4 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2\n");  
-        printf("5 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_Cadenas\n");  
-        printf("6 argumentos:\n   Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_C1 Inicio_C2\n");  
-        printf("Tamano e inicio escalados: 1:100\n");
     }
-    if(argc >= 3 && argc <=7)
+    
+    if(lecturaCorrecta==1)
     {
-        printf("%s comparado con %s\n",argv[1],argv[2]);
+        printf("%s comparado con %s\n",nombre1,nombre2);
         printf("Tamanos: %d %d\n",T1*100,T2*100);
         printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
         struct timeval t1,t2,t3,t4;
         double total;
-        //t1 = time(0);
+
         gettimeofday(&t1, NULL);
-        char* string1=CargarFichero(argv[1],T1,I1);
-        char* string2=CargarFichero(argv[2],T2,I2);
-        //                                                                    printf("Fin construccion cadenas\n");
+        char* string1=CargarFichero(nombre1,T1,I1);
+        char* string2=CargarFichero(nombre2,T2,I2);
         struct Celda **Matriz;
         if(strlen(string1)==0 || strlen(string2)==0)
         {
             printf("Una cadena esta vacia");
             exit(2);
         }
-        //                                                                    printf("Lectura correcta \n");
-        Matriz=inicializarMatriz(strlen(string1),strlen(string2));
-        //t2 = time(0);
+        Matriz=inicializarMatriz(strlen(string1),strlen(string2),modo);
         gettimeofday(&t2, NULL);
-        //                                                                    printf("Matriz iniciada\n");
-        CompletarMatriz(string1,string2,Matriz);
-        //t3 = time(0);
+        if(modo==1)
+            CompletarMatrizSecuencial(string1,string2,Matriz);
+        if(modo==2)
+            CompletarMatrizOmp(string1,string2,Matriz,sobrecarga);
         gettimeofday(&t3, NULL);
-
-        //                                                                    printf("Matriz completa\n");
         int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
-        //                                                                    printf("Ruta calculada\n");
-        //t4 = time(0);
-        
         
         gettimeofday(&t4, NULL);
         
@@ -143,6 +191,49 @@ int main( int argc, char *argv[] )
     printf("Fin");
     exit(0);
     return 0;
+}
+
+/**
+ * ImprimirInstruccionesDeUso imprime la informacion de uso de este programa, asi como los autores.
+ * @author Nacho
+ * @date 3/03/2018
+ */
+void ImprimirInstruccionesDeUso()
+{
+    printf("Programa para el calculo de porcentaje de similitud de dos cadenas de Adn\n");  
+    printf("Autores:\n");  
+    printf("\tIgnacio Gomis Lli\n");  
+    printf("\tLidia Montero Egidos\n");  
+    printf("\tSara Monzo Bravo\n");  
+    printf("\tPaul Vargas Hurtado\n");  
+    printf("Asignatura: Arquitectura de procesadores, 3ro Ingenieria Informatica\n");  
+    printf("Profesorado:\n");  
+    printf("\t Jose Manuel Claver Iborra\n");  
+    printf("\t Adria Gimenez Pastor\n");  
+    printf("Universidad de Valencia, ETSE\n");  
+    printf("Curso 2017/2018\n");  
+    printf("\n");  
+    printf("Instrucciones de uso:\n");  
+    printf("-Los ficheros deben estar escritos en formato fasta\n");  
+    printf("-Los argumentos de tamano tienen un escalado 1:100, es decir, en caso de que\n"); 
+    printf("se introduzca un 1 nos referimos a la posicion 100 del fichero\n");  
+    printf("\n");  
+    printf("Existen distintos modos de ejecucion, se determina cual se emplea segun el\n"); 
+    printf("primer argumento\n");  
+    printf("-Ejecucion secuencial, primer argumento 1\n");  
+    printf("3 argumentos:\n  1 Bloques_Por_Hilo Fichero_1 Fichero_2\n");     
+    printf("4 argumentos:\n  1 Fichero_1 Fichero_2 Tamano_maximo\n");       
+    printf("5 argumentos:\n  1 Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2\n");  
+    printf("6 argumentos:\n  1 Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_Cadenas\n");  
+    printf("7 argumentos:\n  1 Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_C1 Inicio_C2\n");  
+    printf("\n");  
+    printf("-Ejecucion con OMP, segundo argumento 2, requiere opcion de compilado -fopenmp\n"); 
+    printf("4 argumentos:\n  2 Bloques_Por_Hilo Fichero_1 Fichero_2\n");        
+    printf("5 argumentos:\n  2 Bloques_Por_Hilo Fichero_1 Fichero_2 Tamano_maximo\n");       
+    printf("6 argumentos:\n  2 Bloques_Por_Hilo Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2\n");  
+    printf("7 argumentos:\n  2 Bloques_Por_Hilo Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_Cadenas\n");  
+    printf("8 argumentos:\n  2 Bloques_Por_Hilo Fichero_1 Fichero_2 TamanoMax_Cadena1 TamanoMax_Cadena2 Inicio_C1 Inicio_C2\n");  
+
 }
 
 /**
@@ -190,7 +281,7 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 // @param unsigned r rows
 // @param unsigned c cols
 // @return arr matriz con los valores negativos
-struct Celda** inicializarMatriz(unsigned r, unsigned c)
+struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
 {
     unsigned i;
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
@@ -199,18 +290,29 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
     arr[0][0].dir = 0;
-    
-    for(i = 1 ; i<=r; i++)
+    switch(m)
     {
-        arr[i][0].score = -i;
-        arr[i][0].dir=0;
+        case 1: //Secuencial
+        {
+            for(i = 1 ; i<=r; i++)
+            {
+                arr[i][0].score = -i;
+                arr[i][0].dir=0;
+            }
+            for(i = 1 ; i<=c; i++)
+            {
+                arr[0][i].score = -i;
+                arr[0][i].dir=0;
+            }
+        }
+        break;
+        default:
+        {
+            exit(3);
+        }
+        break;
     }
     
-    for(i = 1 ; i<=c; i++)
-    {
-        arr[0][i].score = -i;
-        arr[0][i].dir=0;
-    }
     return arr;
 }
 
@@ -223,7 +325,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
  * @param string2 Cadena de texto 2
  * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
  */
-void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
+void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix)
 {
     
     unsigned i;
@@ -238,6 +340,37 @@ void CompletarMatriz(char* string1,char* string2,struct Celda** matrix)
             CalcularCasilla(i, j, (string1[i-1]==string2[j-1]||string1[i-1]=='N'||string2[j-1]=='N'), matrix);
             }
     return;
+}
+
+
+
+/**
+ * CompletarMatriz funcion que gestiona los hilos para realizar el algoritmo Needleman-Wunsch en multiples procesadores
+ * @author Nacho
+ * @date 28/2/2018
+ * @param string1 Cadena de texto 1
+ * @param string2 Cadena de texto 2
+ * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
+ * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo debería ser la longitud del string.
+ */
+void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
+{
+    /*unsigned i;
+    unsigned p=omp_get_max_threads();
+    unsigned *Posiciones=AsignarVector(strlen(string2),p*sobrecarga);
+    unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
+    for (i = 0; i < p*sobrecarga; ++i)
+        locks[i] = 0;
+    
+    #pragma omp parallel
+    {
+        unsigned id=omp_get_thread_num();
+        for(i=0;i<sobrecarga;i++)
+            if(id==0&&i==0)
+                CalcularSubMatriz (matrix, 1,Posiciones[0],string1,string2,locks,0);
+            else
+                CalcularSubMatriz (matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],string1,string2,locks,(id+p*i));    
+    }*/
 }
 
 /**

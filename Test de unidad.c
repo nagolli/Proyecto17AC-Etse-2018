@@ -16,10 +16,10 @@ struct Celda
 
 char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
-void CompletarMatriz(char*,char*,struct Celda**,unsigned);
+void CompletarMatrizSecuencial(char*,char*,struct Celda**);
+void CompletarMatrizOmp(char*,char*,struct Celda**,unsigned);
 unsigned* AsignarVector(unsigned,unsigned);
 void CalcularSubMatriz(struct Celda**,unsigned,unsigned,char*,char*,unsigned*,unsigned);
-
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
@@ -66,7 +66,10 @@ int main()
     struct Celda **Matriz;
     Matriz=inicializarMatriz(strlen(string1),strlen(string2));
     printf("Matriz iniciada\n");
-    CompletarMatriz(string1,string2,Matriz,1); //ACTUALMENTE SIN SOBRECARGA
+    
+    //CompletarMatrizSecuencial(string1,string2,Matriz); 
+    
+    CompletarMatrizOmp(string1,string2,Matriz,1); 
     
     int i,j;
     printf("\n");
@@ -199,7 +202,7 @@ void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix
  * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
  * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo debería ser la longitud del string.
  */
-void CompletarMatriz(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
+void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
 {
     unsigned i;
     unsigned p=omp_get_max_threads();
