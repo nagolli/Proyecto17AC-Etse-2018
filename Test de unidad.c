@@ -206,19 +206,23 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
 {
     unsigned i;
     unsigned p=omp_get_max_threads();
-    unsigned *Posiciones=AsignarVector(strlen(string2),p*sobrecarga);
+    unsigned *posiciones=AsignarVector(strlen(string2),p*sobrecarga);
     unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
     for (i = 0; i < p*sobrecarga; ++i)
+    {
+        printf("+%d ",posiciones[i]);
         locks[i] = 0;
+    }
+        printf("\n");
     
     #pragma omp parallel private(i) shared(matrix,posiciones,string1,string2,locks,p,sobrecarga)
     {
         unsigned id=omp_get_thread_num();
         for(i=0;i<sobrecarga;i++)
             if(id==0&&i==0)
-                CalcularSubMatriz (matrix, 1,Posiciones[0],string1,string2,locks,0);
+                CalcularSubMatriz (matrix, 1,posiciones[0],string1,string2,locks,0);
             else
-                CalcularSubMatriz (matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],string1,string2,locks,(id+p*i));    
+                CalcularSubMatriz (matrix, posiciones[id-1+p*i],posiciones[id+p*i],string1,string2,locks,(id+p*i));    
     }
 }
 
@@ -232,15 +236,26 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
  */
 unsigned* AsignarVector(unsigned tamano,unsigned p)
 {
-	int l, i;
-	unsigned *final =(unsigned *)malloc(p*sizeof(unsigned))
-	l=tamano/p
+	int a,l, i;
+	unsigned *final =(unsigned *)malloc(p*sizeof(unsigned));
+	l=tamano/p;
+	//Garantizar un minimo avance
+	if(l==0)
+	   l=1;
+	//Asignacion
+	a=l;
 	for(i=0;i<p-1;++i)
 	{
-		final[i]=l;
-		l+=l;
+		final[i]=a;
+		a+=l;
 	}
 	final[p-1]=tamano;
+	//Para evitar accidentes
+	for(i=0;i<p;++i)
+	{
+		if(final[i]>tamano)
+		  final[i]=tamano;
+	}
     return final;
 }
 
