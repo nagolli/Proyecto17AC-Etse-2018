@@ -200,7 +200,7 @@ void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
  * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
- * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo debería ser la longitud del string.
+ * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo deberï¿½a ser la longitud del string.
  */
 void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
 {
@@ -258,9 +258,42 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
 	}
     return final;
 }
-
-void CalcularSubMatriz(struct Celda** matrix,unsigned ji,unsigned jf,char* string1,char* string2,unsigned* locks,unsigned id)
+/**
+ * CalcularSubMatriz rellena la matriz a partes, usando 2 columnas cada vez
+ * @author Paul
+ * @date 01/03/2018
+ * @param matrix Matriz sobre la que se opera
+ * @param c1 indice de la columna que calcularemos
+ * @param c2 indice de la columna que calcularemos
+ * @param string1 Cadena de texto
+ * @param string2 Cadena de texto
+ * @param locks Array de mutex
+ * @param id Identificador del hilo que  estÃ¡ ejecutando esta funciÃ³n
+ */
+void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* string1, char* string2, unsigned* locks, unsigned id)
 {
+	unsigned size1 = strlen(string1);
+	int tiempo = 500000;
+	
+	if( id > 0 && locks[id - 1] >= locks[id] )
+	{
+		dormir = usleep(tiempo);
+		printf("Durmiendo por: %d microsegundos", tiempo);
+	}
+	else
+	{
+		//lock[id]++ al final de fila o de columna? PREGUNTAR
+		//paralelizar aqui? PROBAR
+		for( i = 1; i <= size1; ++i)
+		{
+			CalcularCasilla(i, c1, string1[i - 1] == string2[c1] || string1[i - 1] == 'N' || string2[c1] == 'N'), matrix;
+			CalcularCasilla(i, c2, string1[i - 1] == string2[c2] || string1[i - 1] == 'N' || string2[c2] == 'N'), matrix;
+			
+			if( i == size1 )
+				locks[id]++;
+		}
+	}
+	
     return;
 }
 
@@ -282,7 +315,7 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
     int B = matrix[i][j-1].score - 1;
     int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
     
-    //Calculo de la dirección como un array de booleanos
+    //Calculo de la direcciï¿½n como un array de booleanos
     int D=0;
     D += (A>=B && A>=C)<<1;    //Vertical en 1a posicion
     D += (B>=A && B>=C); //Horizontal en 2a posicion
@@ -296,7 +329,7 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
 /**
  * GetRuta Funcion de backtraking para saber cual es el mayor indice de coincidencias. Aumenta la cuenta si encuentra diagonales.
  * @author Paul
- * @author Nacho en la optimización
+ * @author Nacho en la optimizaciï¿½n
  * @date 12/2/2018
  * @date 14/2/2018 en optimizacion
  * @param matrix Matriz de structs sobre la que se opera. In/Out
