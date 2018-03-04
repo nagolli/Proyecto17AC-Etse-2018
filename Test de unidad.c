@@ -222,9 +222,26 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
     }
 }
 
+/**
+ * AsignarVector funcion que calcula las posiciones finales de cada bloque
+ * @author Lidia
+ * @date 4/3/2018
+ * @param tamano Tamano del ancho de la matriz
+ * @param p Numero de procesadores
+ * @return final Vector dinamico de posiciones
+ */
 unsigned* AsignarVector(unsigned tamano,unsigned p)
 {
-    return (unsigned *)malloc(p*sizeof(unsigned));
+	int l, i;
+	unsigned *final =(unsigned *)malloc(p*sizeof(unsigned))
+	l=tamano/p
+	for(i=0;i<p-1;++i)
+	{
+		final[i]=l;
+		l+=l;
+	}
+	final[p-1]=tamano;
+    return final;
 }
 
 void CalcularSubMatriz(struct Celda** matrix,unsigned ji,unsigned jf,char* string1,char* string2,unsigned* locks,unsigned id)
