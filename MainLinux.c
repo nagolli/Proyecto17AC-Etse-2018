@@ -19,9 +19,14 @@ char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned,unsigned);
 void CompletarMatrizSecuencial(char*,char*,struct Celda**);
 void CompletarMatrizOmp(char*,char*,struct Celda**,unsigned);
+unsigned* AsignarVector(unsigned,unsigned);
+void CalcularSubMatriz(struct Celda**,unsigned,unsigned,char*,char*,unsigned*,unsigned);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
+
+//Funciones auxiliares
+
 /*Maximo entre dos valores*/
 unsigned maxU(unsigned arg1, unsigned arg2)
 {
@@ -81,23 +86,23 @@ int main( int argc, char *argv[] )
             {
                 case 5: //Ambos desde el principio hasta lo que coja
                     T1=1000;T2=1000;I1=0;I2=0;
-                    
-                break;
+                    break;
                 case 6: //Ambos con Tamano arg[5]
                     T1=atoi(argv[5]);T2=T1;I1=0;I2=0;
-                break;
+                    break;
                 case 7: //Cada uno con Tamano arg[5] y arg[6]
                     T1=atoi(argv[5]);T2=atoi(argv[6]);I1=0;I2=0;
-                break;
+                    break;
                 case 8: //Cada uno con Tamano arg[5] y arg[6] empezando desde arg[7]
                     T1=atoi(argv[5]);T2=atoi(argv[6]);I1=atoi(argv[7]);I2=I1;
-                break;
+                    break;
                 case 9: //Cada uno con Tamano arg[5] y arg[6] empezando desde arg[7] y arg[8]
                     T1=atoi(argv[5]);T2=atoi(argv[6]);I1=atoi(argv[7]);I2=atoi(argv[8]);
-                break;
+                    break;
                 default: //Instrucciones de uso
-                ImprimirInstruccionesDeUso();
-                lecturaCorrecta=0;
+                    ImprimirInstruccionesDeUso();
+                    lecturaCorrecta=0;
+                break;
             }
         }
         break;
@@ -152,8 +157,27 @@ int main( int argc, char *argv[] )
         double total;
 
         gettimeofday(&t1, NULL);
-        char* string1=CargarFichero(nombre1,T1,I1);
-        char* string2=CargarFichero(nombre2,T2,I2);
+        
+        char* string1;
+        char* string2;
+        switch(modo)
+        {
+            case 1: //Secuencial
+            {
+                string1=CargarFichero(nombre1,T1,I1);
+                string2=CargarFichero(nombre2,T2,I2);   
+            }
+            break;
+            
+            
+            default:
+            {
+                exit(4);
+            }
+            break;
+                
+        }
+        
         struct Celda **Matriz;
         if(strlen(string1)==0 || strlen(string2)==0)
         {
@@ -305,10 +329,14 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
                 arr[0][i].dir=0;
             }
         }
+        case 2: //Omp
+        {
+            
+        }
         break;
         default:
         {
-            exit(3);
+            exit(4);
         }
         break;
     }
@@ -351,26 +379,97 @@ void CompletarMatrizSecuencial(char* string1,char* string2,struct Celda** matrix
  * @param string1 Cadena de texto 1
  * @param string2 Cadena de texto 2
  * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
- * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo debería ser la longitud del string.
+ * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo deberï¿½a ser la longitud del string.
  */
 void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsigned sobrecarga)
 {
-    /*unsigned i;
+    unsigned i;
     unsigned p=omp_get_max_threads();
-    unsigned *Posiciones=AsignarVector(strlen(string2),p*sobrecarga);
+    unsigned *posiciones=AsignarVector(strlen(string2),p*sobrecarga);
     unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
     for (i = 0; i < p*sobrecarga; ++i)
+    {
         locks[i] = 0;
+    }
     
     #pragma omp parallel private(i) shared(matrix,posiciones,string1,string2,locks,p,sobrecarga)
     {
         unsigned id=omp_get_thread_num();
         for(i=0;i<sobrecarga;i++)
             if(id==0&&i==0)
-                CalcularSubMatriz (matrix, 1,Posiciones[0],string1,string2,locks,0);
+                CalcularSubMatriz (matrix, 1,posiciones[0],string1,string2,locks,0);
             else
-                CalcularSubMatriz (matrix, Posiciones[id-1+p*i],Posiciones[id+p*i],string1,string2,locks,(id+p*i));    
-    }*/
+                CalcularSubMatriz (matrix, posiciones[id-1+p*i],posiciones[id+p*i],string1,string2,locks,(id+p*i));    
+    }
+}
+
+/**
+ * AsignarVector funcion que calcula las posiciones finales de cada bloque
+ * @author Lidia
+ * @date 4/3/2018
+ * @param tamano Tamano del ancho de la matriz
+ * @param p Numero de procesadores
+ * @return final Vector dinamico de posiciones
+ */
+unsigned* AsignarVector(unsigned tamano,unsigned p)
+{
+	unsigned a,l, i;
+	unsigned *final =(unsigned *)malloc(p*sizeof(unsigned));
+	l=tamano/p;
+	//Garantizar un minimo avance
+	if(l==0)
+	   l=1;
+	//Asignacion
+	a=l;
+	for(i=0;i<p-1;++i)
+	{
+		final[i]=a;
+		a+=l;
+	}
+	final[p-1]=tamano;
+	//Para evitar accidentes
+	for(i=0;i<p;++i)
+	{
+		if(final[i]>tamano)
+		  final[i]=tamano;
+	}
+    return final;
+}
+/**
+ * CalcularSubMatriz rellena la matriz a partes, entre dos columnas objetivo
+ * @author Paul
+ * @date 01/03/2018
+ * @param matrix Matriz sobre la que se opera
+ * @param c1 indice de la columna que calcularemos
+ * @param c2 indice de la columna que calcularemos
+ * @param string1 Cadena de texto
+ * @param string2 Cadena de texto
+ * @param locks Array de cerrojos
+ * @param id Identificador del hilo que  esta ejecutando esta funcion
+ */
+void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* string1, char* string2, unsigned* locks, unsigned id)
+{
+	int tiempo = 500;
+	unsigned size1=strlen(string1);
+	unsigned i;
+	unsigned j;
+	
+	for( i = 1; i <= size1; ++i)
+	{
+		for( j = c1; j <= c2; ++j)
+		{
+			while( id > 0 && locks[id - 1] <= locks[id] )
+			{
+				usleep(tiempo);
+			}
+			
+			CalcularCasilla(i, j, string1[i - 1] == string2[j-1] || string1[i - 1] == 'N' || string2[j-1] == 'N', matrix);
+		}
+		locks[id]++;
+	}
+	
+	
+    return;
 }
 
 /**
