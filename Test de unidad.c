@@ -208,7 +208,6 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
     unsigned p=omp_get_max_threads();
     unsigned *posiciones=AsignarVector(strlen(string2),p*sobrecarga);
     unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
-    
     for (i = 0; i < p*sobrecarga; ++i)
     {
         printf("+%d ",posiciones[i]);
@@ -262,7 +261,6 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
 /**
  * CalcularSubMatriz rellena la matriz a partes, usando 2 columnas
  * @author Paul
- * @author Nacho
  * @date 01/03/2018
  * @param matrix Matriz sobre la que se opera
  * @param c1 indice de la columna que calcularemos
@@ -284,12 +282,13 @@ void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* st
 	{
 		for( j = c1; j <= c2; ++j)
 		{
-			while( id > 0 && locks[id - 1] <= locks[id] )
+			while( id > 0 && locks[id - 1] >= locks[id] )
 			{
 				dormir = usleep(tiempo);
+				//printf("Durmiendo por: %d microsegundos", tiempo);
 			}
 			
-			CalcularCasilla(i, j, string1[i - 1] == string2[j - 1] || string1[i - 1] == 'N' || string2[j - 1] == 'N', matrix);
+			CalcularCasilla(i, j, string1[i - 1] == string2[j] || string1[i - 1] == 'N' || string2[j] == 'N', matrix);
 		}
 		
 		locks[id]++;
