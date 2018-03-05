@@ -72,6 +72,7 @@ int main()
     CompletarMatrizOmp(string1,string2,Matriz,1); 
     
     int i,j;
+    
     printf("\n");
     for(i=0;i<=7;i++) {
         for(j=0;j<=7;j++)
@@ -85,6 +86,7 @@ int main()
          printf("\n");
         }
         printf("\n");
+    
     
     
     printf("Matriz completada\n");
@@ -210,10 +212,8 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
     unsigned *locks =(unsigned *)malloc(p*sobrecarga* sizeof(unsigned));
     for (i = 0; i < p*sobrecarga; ++i)
     {
-        printf("+%d ",posiciones[i]);
         locks[i] = 0;
     }
-        printf("\n");
     
     #pragma omp parallel private(i) shared(matrix,posiciones,string1,string2,locks,p,sobrecarga)
     {
@@ -259,7 +259,7 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
     return final;
 }
 /**
- * CalcularSubMatriz rellena la matriz a partes, usando 2 columnas cada vez
+ * CalcularSubMatriz rellena la matriz a partes, entre dos columnas objetivo
  * @author Paul
  * @date 01/03/2018
  * @param matrix Matriz sobre la que se opera
@@ -267,32 +267,31 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
  * @param c2 indice de la columna que calcularemos
  * @param string1 Cadena de texto
  * @param string2 Cadena de texto
- * @param locks Array de mutex
- * @param id Identificador del hilo que  está ejecutando esta función
+ * @param locks Array de cerrojos
+ * @param id Identificador del hilo que  esta ejecutando esta funcion
  */
 void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* string1, char* string2, unsigned* locks, unsigned id)
 {
-	unsigned size1 = strlen(string1);
-	int tiempo = 500000;
+	int tiempo = 500;
+	int dormir = 0;
+	unsigned size1=strlen(string1);
+	int i;
+	int j;
 	
-	if( id > 0 && locks[id - 1] >= locks[id] )
+	for( i = 1; i <= size1; ++i)
 	{
-		dormir = usleep(tiempo);
-		printf("Durmiendo por: %d microsegundos", tiempo);
-	}
-	else
-	{
-		//lock[id]++ al final de fila o de columna? PREGUNTAR
-		//paralelizar aqui? PROBAR
-		for( i = 1; i <= size1; ++i)
+		for( j = c1; j <= c2; ++j)
 		{
-			CalcularCasilla(i, c1, string1[i - 1] == string2[c1] || string1[i - 1] == 'N' || string2[c1] == 'N'), matrix;
-			CalcularCasilla(i, c2, string1[i - 1] == string2[c2] || string1[i - 1] == 'N' || string2[c2] == 'N'), matrix;
+			while( id > 0 && locks[id - 1] <= locks[id] )
+			{
+				dormir = usleep(tiempo);
+			}
 			
-			if( i == size1 )
-				locks[id]++;
+			CalcularCasilla(i, j, string1[i - 1] == string2[j-1] || string1[i - 1] == 'N' || string2[j-1] == 'N', matrix);
 		}
+		locks[id]++;
 	}
+	
 	
     return;
 }
@@ -344,7 +343,7 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 	   for(y=0;y<=j;y++)
 	       matrix[x][y].score=-1;
 	
-	
+	/*
 	printf("\n");
         for(x=0;x<=7;x++) {
         for(y=0;y<=7;y++)
@@ -352,9 +351,9 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
          printf("\n");
         }
         printf("\n");
-	
+	*/
 	AuxGetRuta(matrix, i, j, 0, &maximo);
-	
+	/*
 	printf("\n");
         for(x=0;x<=7;x++) {
         for(y=0;y<=7;y++)
@@ -362,51 +361,51 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
          printf("\n");
         }
         printf("\n");
-	
+	*/
 	
 	return maximo;
 }
 
 int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned *maximo)
 {
-    printf("%d %d %d %d %d %d ",i,j,matrix[i][j].score,matrix[i][j].dir,cont,*maximo);
+    //printf("%d %d %d %d %d %d ",i,j,matrix[i][j].score,matrix[i][j].dir,cont,*maximo);
     
     
     int A=-1,B=-1,C=-1;
     if(matrix[i][j].score>=0)
     {
-        printf("Poda por score>0\n");
+        //printf("Poda por score>0\n");
         return matrix[i][j].score;
     }
     if((cont+i<*maximo || cont+j<*maximo)&&(*maximo>0))
     {
         matrix[i][j].score=0;
-        printf("Poda por lejania\n");
+        //printf("Poda por lejania\n");
         return 0;
     }
 	if(i == 0 || j == 0)
 	{
 		*maximo = maxI(cont, *maximo);
 		matrix[i][j].score=0;
-		printf("Guardando Maximo\n");
+		//printf("Guardando Maximo\n");
 		return 0;
 	}
 	else 
 	{
-	    printf("Procesando\n");
+	    //printf("Procesando\n");
 	    if(matrix[i][j].dir>3)
 		{
-		    printf("%d %d diagonal\n",i,j);
+		    //printf("%d %d diagonal\n",i,j);
 			A=AuxGetRuta(matrix, i - 1, j - 1, cont + 1, maximo)+1;
 		}
 		if(matrix[i][j].dir==2||matrix[i][j].dir==3||matrix[i][j].dir==6||matrix[i][j].dir==7)
         {
-            printf("%d %d arriba\n",i,j);
+            //printf("%d %d arriba\n",i,j);
 			B=AuxGetRuta(matrix, i - 1, j, cont, maximo);
         }
 		if(matrix[i][j].dir==1||matrix[i][j].dir==3||matrix[i][j].dir==5||matrix[i][j].dir==7)
         {
-            printf("%d %d horiz\n",i,j);
+            //printf("%d %d horiz\n",i,j);
 			C=AuxGetRuta(matrix, i, j - 1, cont, maximo);
         }
 	}
