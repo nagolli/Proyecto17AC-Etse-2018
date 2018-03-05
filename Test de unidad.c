@@ -259,7 +259,7 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
     return final;
 }
 /**
- * CalcularSubMatriz rellena la matriz a partes, usando 2 columnas cada vez
+ * CalcularSubMatriz rellena la matriz a partes, usando 2 columnas
  * @author Paul
  * @date 01/03/2018
  * @param matrix Matriz sobre la que se opera
@@ -272,31 +272,31 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
  */
 void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* string1, char* string2, unsigned* locks, unsigned id)
 {
-	unsigned size1 = strlen(string1);
-	int tiempo = 500000;
+	int tiempo = 500;
+	int dormir = 0;
+	unsigned size1=strlen(string1);
+	int i;
+	int j;
 	
-	if( id > 0 && locks[id - 1] >= locks[id] )
+	for( i = 1; i <= size1; ++i)
 	{
-		dormir = usleep(tiempo);
-		printf("Durmiendo por: %d microsegundos", tiempo);
-	}
-	else
-	{
-		//lock[id]++ al final de fila o de columna? PREGUNTAR
-		//paralelizar aqui? PROBAR
-		for( i = 1; i <= size1; ++i)
+		for( j = c1; j <= c2; ++j)
 		{
-			CalcularCasilla(i, c1, string1[i - 1] == string2[c1] || string1[i - 1] == 'N' || string2[c1] == 'N'), matrix;
-			CalcularCasilla(i, c2, string1[i - 1] == string2[c2] || string1[i - 1] == 'N' || string2[c2] == 'N'), matrix;
+			while( id > 0 && locks[id - 1] >= locks[id] )
+			{
+				dormir = usleep(tiempo);
+				//printf("Durmiendo por: %d microsegundos", tiempo);
+			}
 			
-			if( i == size1 )
-				locks[id]++;
+			CalcularCasilla(i, j, string1[i - 1] == string2[j] || string1[i - 1] == 'N' || string2[j] == 'N', matrix);
 		}
+		
+		locks[id]++;
 	}
+	
 	
     return;
 }
-
 
 
 /**
