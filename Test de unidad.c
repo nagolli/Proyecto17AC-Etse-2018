@@ -54,9 +54,19 @@ void Mayus(char * temp) {
 
 int main()
 { 
-    char* string1=CargarFichero("UT1.fa",1,0);
-    char* string2=CargarFichero("UT2.fa",1,0);
-    printf("Cadenas leidas\n");
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+	    char* string1=CargarFichero("UT1.fa",1,0);
+	    printf("Cadena 1 leida\n");
+	}
+        #pragma omp section
+        {
+	    char* string2=CargarFichero("UT2.fa",1,0);
+	    printf("Cadena 2 leida\n");
+	}
+    }
     if(strlen(string1)==0 || strlen(string2)==0)
     {
         printf("Una cadena esta vacia\n");
