@@ -149,7 +149,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
     unsigned i;
     struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
 	
-    #pragma omp parallel for //No estoy segura de si necesita un flush
+    //#pragma omp parallel for //No estoy segura de si necesita un flush
     for (i = 0; i <= r; ++i)
         arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
     //Casos base posicion:  r = 0, c = 0
