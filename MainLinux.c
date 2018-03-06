@@ -168,7 +168,17 @@ int main( int argc, char *argv[] )
                 string2=CargarFichero(nombre2,T2,I2);   
             }
             break;
-            
+            case 2: //omp
+            {
+                #pragma omp parallel sections shared(nombre1,nombre2,T1,I1,T2,I2)
+                {
+                    #pragma omp section
+                        string1=CargarFichero(nombre1,T1,I1);
+                    #pragma omp section
+                        string2=CargarFichero(nombre2,T2,I2);   
+                }
+            }
+            break;
             
             default:
             {
@@ -331,7 +341,25 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
         }
         case 2: //Omp
         {
-            
+            #pragma omp parallel sections shared(arr) private (i)
+            {
+                #pragma omp section
+                {
+                    for(i = 1 ; i<=r; i++)
+                    {
+                        arr[i][0].score = -i;
+                        arr[i][0].dir=0;
+                    }
+                }
+                #pragma omp section
+                {
+                    for(i = 1 ; i<=c; i++)
+                    {
+                        arr[0][i].score = -i;
+                        arr[0][i].dir=0;
+                    }
+                }
+            }
         }
         break;
         default:
