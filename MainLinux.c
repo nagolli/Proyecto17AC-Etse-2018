@@ -280,7 +280,6 @@ void ImprimirInstruccionesDeUso()
 char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 {
     tamano*=100;
-    inicio*=100;
     FILE *archivo;
  	unsigned i;
  	char caracteres[100];
@@ -295,8 +294,10 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
  	else
     {
         fgets(caracteres,100,archivo); //Primera linea
-        for(i=0;i<inicio;i++)
+        for(i=0;(i<inicio)&&(feof(archivo) == 0);i++)
+        {
             fgets(caracteres,100,archivo);
+        }
         i=tamano;
  	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
  	    {
