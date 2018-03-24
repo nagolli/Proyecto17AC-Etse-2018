@@ -299,7 +299,7 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
             fgets(caracteres,100,archivo);
         }
         i=tamano;
- 	    while (feof(archivo) == 0 && strlen(cadena)<i) //Hasta fin de archivo o memoria
+ 	    while (feof(archivo) == 0) //Hasta fin de archivo o memoria
  	    {
  		fgets(caracteres,100,archivo);
  		strcat(cadena, caracteres);
@@ -319,9 +319,10 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
 {
     unsigned i;
-    struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
-    for (i = 0; i <= r; ++i)
-        arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
+    struct Celda **arr =(struct Celda **)malloc((r+1)* sizeof(struct Celda *));
+    struct Celda *mem= (struct Celda *) malloc((r+1)*(c+1)*sizeof(struct Celda));
+    for (i=0;i<=r;++i)
+           arr[i]= mem + i*(c+1);
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
     arr[0][0].dir = 0;
