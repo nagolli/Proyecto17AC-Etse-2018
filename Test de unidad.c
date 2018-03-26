@@ -15,7 +15,7 @@ struct Celda
 };
 
 char* CargarFichero(char*,unsigned,unsigned);
-struct Celda** inicializarMatriz(unsigned, unsigned);
+struct Celda** inicializarMatriz(unsigned, unsigned, unsigned);
 void CompletarMatrizSecuencial(char*,char*,struct Celda**);
 void CompletarMatrizOmp(char*,char*,struct Celda**,unsigned);
 unsigned* AsignarVector(unsigned,unsigned);
@@ -54,19 +54,10 @@ void Mayus(char * temp) {
 
 int main()
 { 
-    #pragma omp parallel sections
-    {
-        #pragma omp section
-        {
-	    char* string1=CargarFichero("UT1.fa",1,0);
-	    printf("Cadena 1 leida\n");
-	}
-        #pragma omp section
-        {
-	    char* string2=CargarFichero("UT2.fa",1,0);
-	    printf("Cadena 2 leida\n");
-	}
-    }
+	char* string1=CargarFichero("UT1.fa",1,0);
+	printf("Cadena 1 leida\n");
+    char* string2=CargarFichero("UT2.fa",1,0);
+    printf("Cadena 2 leida\n");
     if(strlen(string1)==0 || strlen(string2)==0)
     {
         printf("Una cadena esta vacia\n");
@@ -74,7 +65,7 @@ int main()
     }
         
     struct Celda **Matriz;
-    Matriz=inicializarMatriz(strlen(string1),strlen(string2));
+    Matriz=inicializarMatriz(strlen(string1),strlen(string2),2);
     printf("Matriz iniciada\n");
     
     //CompletarMatrizSecuencial(string1,string2,Matriz); 
@@ -153,32 +144,59 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 // @date 12/2/2018
 // @param unsigned r rows
 // @param unsigned c cols
+// @param unsigned m modo de ejecucion
 // @return arr matriz con los valores negativos
-struct Celda** inicializarMatriz(unsigned r, unsigned c)
+struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
 {
     unsigned i;
-    struct Celda **arr =(struct Celda **)malloc(r*c* sizeof(struct Celda));
-	
-    //#pragma omp parallel for //No estoy segura de si necesita un flush
-    for (i = 0; i <= r; ++i)
-        arr[i] = (struct Celda *)malloc(c * sizeof(struct Celda));
+    struct Celda **arr =(struct Celda **)malloc((r+1)* sizeof(struct Celda *));
+    struct Celda *mem= (struct Celda *) malloc((r+1)*(c+1)*sizeof(struct Celda));
+    for (i=0;i<=r;++i)
+           arr[i]= mem + i*(c+1);
     //Casos base posicion:  r = 0, c = 0
     arr[0][0].score = 0;
     arr[0][0].dir = 0;
-    
-    #pragma omp parallel for
-    for(i = 1 ; i<=r; i++)
+    switch(m)
     {
-        arr[i][0].score = -i;
-        arr[i][0].dir=0;
+        case 2: //Omp
+        {
+            #pragma omp parallel sections shared(arr) private (i)
+            {
+                #pragma omp section
+                {
+                    for(i = 1 ; i<=r; i++)
+                    {
+                        arr[i][0].score = -i;
+                        arr[i][0].dir=0;
+                    }
+                }
+                #pragma omp section
+                {
+                    for(i = 1 ; i<=c; i++)
+                    {
+                        arr[0][i].score = -i;
+                        arr[0][i].dir=0;
+                    }
+                }
+            }
+        }
+        break;
+        default:
+        {
+            for(i = 1 ; i<=r; i++)
+            {
+                arr[i][0].score = -i;
+                arr[i][0].dir=0;
+            }
+            for(i = 1 ; i<=c; i++)
+            {
+                arr[0][i].score = -i;
+                arr[0][i].dir=0;
+            }
+        }
+        break;
     }
     
-    #pragma omp parallel for
-    for(i = 1 ; i<=c; i++)
-    {
-        arr[0][i].score = -i;
-        arr[0][i].dir=0;
-    }
     return arr;
 }
 

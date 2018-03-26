@@ -162,12 +162,6 @@ int main( int argc, char *argv[] )
         char* string2;
         switch(modo)
         {
-            case 1: //Secuencial
-            {
-                string1=CargarFichero(nombre1,T1,I1);
-                string2=CargarFichero(nombre2,T2,I2);   
-            }
-            break;
             case 2: //omp
             {
                 #pragma omp parallel sections shared(nombre1,nombre2,T1,I1,T2,I2)
@@ -179,10 +173,10 @@ int main( int argc, char *argv[] )
                 }
             }
             break;
-            
             default:
             {
-                exit(4);
+                string1=CargarFichero(nombre1,T1,I1);
+                string2=CargarFichero(nombre2,T2,I2);   
             }
             break;
                 
@@ -315,6 +309,7 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 // @date 12/2/2018
 // @param unsigned r rows
 // @param unsigned c cols
+// @param unsigned m modo de ejecucion
 // @return arr matriz con los valores negativos
 struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
 {
@@ -328,19 +323,6 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
     arr[0][0].dir = 0;
     switch(m)
     {
-        case 1: //Secuencial
-        {
-            for(i = 1 ; i<=r; i++)
-            {
-                arr[i][0].score = -i;
-                arr[i][0].dir=0;
-            }
-            for(i = 1 ; i<=c; i++)
-            {
-                arr[0][i].score = -i;
-                arr[0][i].dir=0;
-            }
-        }
         case 2: //Omp
         {
             #pragma omp parallel sections shared(arr) private (i)
@@ -366,7 +348,16 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c, unsigned m)
         break;
         default:
         {
-            exit(4);
+            for(i = 1 ; i<=r; i++)
+            {
+                arr[i][0].score = -i;
+                arr[i][0].dir=0;
+            }
+            for(i = 1 ; i<=c; i++)
+            {
+                arr[0][i].score = -i;
+                arr[0][i].dir=0;
+            }
         }
         break;
     }
