@@ -18,9 +18,11 @@ char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned, unsigned);
 void CompletarMatrizSecuencial(char*,char*,struct Celda**);
 void CompletarMatrizOmp(char*,char*,struct Celda**,unsigned);
+void CompletarMatrizMPI(char*,char*,struct Celda**,unsigned);
 unsigned* AsignarVector(unsigned,unsigned);
 void CalcularSubMatriz(struct Celda**,unsigned,unsigned,char*,char*,unsigned*,unsigned);
-void CalcularCasilla(unsigned, unsigned, bool, struct Celda**);  
+void CalcularSubMatrizMPI(struct Celda**,unsigned,char*,char*,unsigned);
+void CalcularCasilla(unsigned, unsigned, bool, struct Celda**,boolean,int,int);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
 /*Maximo entre dos valores*/
@@ -71,6 +73,7 @@ int main()
     //CompletarMatrizSecuencial(string1,string2,Matriz); 
     
     CompletarMatrizOmp(string1,string2,Matriz,1); 
+    //CompletarMatrizMPI(string1,string2,Matriz,1); 
     
     int i,j;
     
@@ -259,6 +262,20 @@ void CompletarMatrizOmp(char* string1,char* string2,struct Celda** matrix, unsig
 }
 
 /**
+ * CompletarMatriz
+ * @author Sara
+ * @date ??/4/2018
+ * @param string1 Cadena de texto 1
+ * @param string2 Cadena de texto 2
+ * @param matrix Matriz de Celdas, su tamano debe ser el de las cadenas de texto +1
+ * @param sobrecarga Cantidad de bloques que realiza un hilo. A mayor cantidad menores tiempos, pero su valor maximo deberï¿½a ser la longitud del string.
+ */
+void CompletarMatrizMPI(char* string1,char* string2,struct Celda** matrix)
+{
+
+}
+
+/**
  * AsignarVector funcion que calcula las posiciones finales de cada bloque
  * @author Lidia
  * @date 4/3/2018
@@ -291,6 +308,54 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
     return final;
 }
 /**
+ * CalcularSubMatrizMPI rellena una submatriz, de manera completa.
+ * En el caso 0 con tamaño N se deben pasar como string2 un string de tamaño N-1.
+ * En el resto de casos se deben pasar como string 2 un string de tamaño N. Además recibe del anterior hilo los datos necesarios para el cálculo.
+ * En todos los casos salvo el ultimo, envia los datos necesarios para el calculo al siguiente hilo
+ * @author Nacho
+ * @date 17/04/2018
+ * @param matrix Submatriz sobre la que se opera
+ * @param tam ancho de matriz (columnas)
+ * @param string1 Subcadena de texto 1
+ * @param string2 Subcadena de texto 2
+ * @param id Identificador del hilo que  esta ejecutando esta funcion
+ * @param maxId Maximo identificador de hilo
+ */
+void CalcularSubMatrizMPI(struct Celda** matrix, unsigned tam, char* string1, char* string2, unsigned id,unsigned maxId)
+{
+	unsigned size1=strlen(string1);
+	int i;
+	int j;
+	int valor1,valor2;
+	valor1=matrix[0][0];
+	for( i = 1; i <= size1; ++i)   //PARA CADA FILA
+	{
+	    if(id!=0)
+	    {
+	       valor2=valor1;
+	       MPI_recv(&valor1,1,MPI_INT,id-1,i,MPI_COMM_WORLD;MPI_STATUS_IGNORE);
+	       CalcularCasilla(i, 0, string1[i] == string2[0] || string1[i] == 'N' || string2[0] == 'N', matrix,true,valor1,valor2);
+		  for( j = 1; j < tam; ++j)
+		  {
+		    CalcularCasilla(i, j, string1[i] == string2[j] || string1[i] == 'N' || string2[j] == 'N', matrix,false,0,0);
+		  }
+		  if(id!=maxId)
+	        MPI_send(matrix[i][tam],1,MPI_INT,id+1,i,MPI_COMM_WORLD);
+	   }
+	   else
+	   {
+	    for( j = 1; j < tam; ++j)
+		  {
+		    CalcularCasilla(i, j, string1[i-1] == string2[j-1] || string1[i-1] == 'N' || string2[j-1] == 'N', matrix,false,0,0);
+		  }
+       }
+	}
+	
+	
+    return;
+}
+
+/**
  * CalcularSubMatriz rellena la matriz a partes, entre dos columnas objetivo
  * @author Paul
  * @date 01/03/2018
@@ -307,6 +372,7 @@ void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* st
 	int tiempo = 500;
 	int dormir = 0;
 	unsigned size1=strlen(string1);
+	printf("%d",size1);
 	int i;
 	int j;
 	
@@ -319,7 +385,7 @@ void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* st
 				dormir = usleep(tiempo);
 			}
 			
-			CalcularCasilla(i, j, string1[i - 1] == string2[j-1] || string1[i - 1] == 'N' || string2[j-1] == 'N', matrix);
+			CalcularCasilla(i, j, string1[i - 1] == string2[j-1] || string1[i - 1] == 'N' || string2[j-1] == 'N', matrix, false,0,0);
 		}
 		locks[id]++;
 	}
@@ -333,20 +399,31 @@ void CalcularSubMatriz(struct Celda** matrix, unsigned c1, unsigned c2, char* st
 /**
  * CalcularCasilla funcion que calcula el contenido de una casillo de la matriz para el algoritmo Needleman-Wunsch
  * @author Nacho
- * @date 6/2/2018
+ * @date 17/4/2018
  * @param i Indice de fila (No puede ser 0)
  * @param j Indice de columna (No puede ser 0)
  * @param igual Comparativa (Char==Char)
  * @param matrix Matriz de structs sobre la que se opera. In/Out
+ * @param MPIrec booleano sobre si debe utilizar valores pasados por argumentos (true) o de la matriz (false)
+ * @param MPIData1 Valor a la izquierda del calculado si MPIrec
+ * @param MPIData2 Valor a la diagonal del calculado si MPIrec
  */
-void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix)
+void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix,boolean MPIrec,int MPIData1, int MPIData2)
 {
+    if(!MPIrec){
     // Constantes Match 2, -2 dismatch, -1 Hueco
-    int A = matrix[i-1][j].score - 1;
-    int B = matrix[i][j-1].score - 1;
-    int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
+        int A = matrix[i-1][j].score - 1;
+        int B = matrix[i][j-1].score - 1;
+        int C = matrix[i-1][j-1].score+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
+    }
+    else
+    {
+        int A = MPIData1 - 1;
+        int B = matrix[i][j-1].score - 1;
+        int C = MPIData2+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
+    }
     
-    //Calculo de la direcciï¿½n como un array de booleanos
+    //Calculo de la direccion como un array de booleanos
     int D=0;
     D += (A>=B && A>=C)<<1;    //Vertical en 1a posicion
     D += (B>=A && B>=C); //Horizontal en 2a posicion
