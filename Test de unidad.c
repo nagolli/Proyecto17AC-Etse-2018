@@ -316,14 +316,15 @@ unsigned* AsignarVector(unsigned tamano,unsigned p)
  * @date 17/04/2018
  * @param matrix Submatriz sobre la que se opera
  * @param tam ancho de matriz (columnas)
- * @param string1 Subcadena de texto 1
- * @param string2 Subcadena de texto 2
+ * @param string1 Subcadena de texto 1 (filas)
+ * @param string2 Subcadena de texto 2 (columnas)
  * @param id Identificador del hilo que  esta ejecutando esta funcion
  * @param maxId Maximo identificador de hilo
  */
-void CalcularSubMatrizMPI(struct Celda** matrix, unsigned tam, char* string1, char* string2, unsigned id,unsigned maxId)
+void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, unsigned id,unsigned maxId)
 {
-	unsigned size1=strlen(string1);
+	unsigned size1=strlen(string1); //Tamaño dependiente del char* recibido, filas
+	unsigned tam=strlen(string2);   //Tamaño dependiente del char* recibido, columnas
 	int i;
 	int j;
 	int valor1,valor2;
@@ -332,15 +333,15 @@ void CalcularSubMatrizMPI(struct Celda** matrix, unsigned tam, char* string1, ch
 	{
 	    if(id!=0)
 	    {
-	       valor2=valor1;
-	       MPI_recv(&valor1,1,MPI_INT,id-1,i,MPI_COMM_WORLD;MPI_STATUS_IGNORE);
-	       CalcularCasilla(i, 0, string1[i] == string2[0] || string1[i] == 'N' || string2[0] == 'N', matrix,true,valor1,valor2);
+	        valor2=valor1; //Desplazar buffer de datos
+	        MPI_recv(&valor1,1,MPI_INT,id-1,i,MPI_COMM_WORLD;MPI_STATUS_IGNORE);   //Recibir dato para nueva linea
+	        CalcularCasilla(i, 0, string1[i] == string2[0] || string1[i] == 'N' || string2[0] == 'N', matrix,true,valor1,valor2);
 		  for( j = 1; j < tam; ++j)
 		  {
 		    CalcularCasilla(i, j, string1[i] == string2[j] || string1[i] == 'N' || string2[j] == 'N', matrix,false,0,0);
 		  }
-		  if(id!=maxId)
-	        MPI_send(matrix[i][tam],1,MPI_INT,id+1,i,MPI_COMM_WORLD);
+		  if(id!=maxId)                                                //Si no es el ultimo
+	        MPI_send(matrix[i][tam],1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
 	   }
 	   else
 	   {
@@ -348,6 +349,8 @@ void CalcularSubMatrizMPI(struct Celda** matrix, unsigned tam, char* string1, ch
 		  {
 		    CalcularCasilla(i, j, string1[i-1] == string2[j-1] || string1[i-1] == 'N' || string2[j-1] == 'N', matrix,false,0,0);
 		  }
+		  if(id!=maxId)                                                //Si no es el ultimo
+		    MPI_send(matrix[i][tam],1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
        }
 	}
 	
