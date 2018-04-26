@@ -19,9 +19,10 @@ char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
 void CompletarMatrizMPI(char* string1, char*, struct Celda**, int);
 void CalcularSubMatrizMPI(struct Celda**, char*, char*, int,int);
-void CalcularCasilla(unsigned, unsigned, bool, struct Celda**,bool,int,int);  
+void CalcularCasilla(unsigned, unsigned, bool, struct Celda**,bool,int,int,int);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
+void print(struct Celda**, char*);
 
 //Funciones auxiliares
 
@@ -69,10 +70,20 @@ void Mayus(char * temp) {
  */
 int main( int argc, char *argv[] ) 
 { 
+    char* string1;
+    char* string2;
+    struct Celda **Matriz;
+                                                                                                    //printf("Inicio\n");
+    MPI_Init(&argc,&argv);
+    int rank,x,y;
+    MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+                                                                                                    //printf("Rank %d\n",rank);
     unsigned T1,T2,I1,I2, sobrecarga;
     char* nombre1;
     char* nombre2;
     bool lecturaCorrecta=1;
+    struct timeval t1,t2,t3,t4;
+            double total;
     if(argc>=4)
     {
             sobrecarga=atoi(argv[1]);
@@ -110,49 +121,70 @@ int main( int argc, char *argv[] )
     
     if(lecturaCorrecta==1)
     {
-        printf("%s comparado con %s\n",nombre1,nombre2);
-        printf("Tamanos: %d %d\n",T1*100,T2*100);
-        printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
-        struct timeval t1,t2,t3,t4;
-        double total;
-
-        gettimeofday(&t1, NULL);
-        
-        char* string1=CargarFichero(nombre1,T1,I1);
-        char* string2=CargarFichero(nombre2,T2,I2);   
-        
-        struct Celda **Matriz;
-        if(strlen(string1)==0 || strlen(string2)==0)
+        if(rank==0)
         {
-            printf("Una cadena esta vacia");
-            exit(2);
+            printf("%s comparado con %s\n",nombre1,nombre2);
+            printf("Tamanos: %d %d\n",T1*100,T2*100);
+            printf("Puntos de inicio: %d %d\n",I1*100,I2*100);
+            
+    
+            gettimeofday(&t1, NULL);
+            
+            string1=CargarFichero(nombre1,T1,I1);
+            string2=CargarFichero(nombre2,T2,I2);   
+    
+            if(strlen(string1)==0 || strlen(string2)==0)
+            {
+                printf("Una cadena esta vacia");
+                exit(2);
+            }
+            Matriz=inicializarMatriz(strlen(string1),strlen(string2));
+            gettimeofday(&t2, NULL);
+
         }
-        Matriz=inicializarMatriz(strlen(string1),strlen(string2));
-        gettimeofday(&t2, NULL);
+        else
+        {
+            string1=CargarFichero(nombre1,T1,I1);
+            if(strlen(string1)==0)
+            {
+                printf("Una cadena esta vacia");
+                exit(2);
+            }
+        }
+           
+	if(rank==0)print(Matriz,"PreCalculo");  
+                                                                               //printf("Rank: %d.Inicio\n",rank);
         CompletarMatrizMPI(string1,string2,Matriz,sobrecarga);
-        gettimeofday(&t3, NULL);
-        int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
-        
-        gettimeofday(&t4, NULL);
-        
-        total = ((t2.tv_sec * 1000000 + t2.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
-        printf("Inicializado:       %lf\n", total );
-        
-        total = ((t3.tv_sec * 1000000 + t3.tv_usec)-(t2.tv_sec * 1000000 + t2.tv_usec));
-        printf("Creacion de matriz: %lf\n", total );
-        
-        total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t3.tv_sec * 1000000 + t3.tv_usec));
-        printf("Backtracking:       %lf\n", total ) ;
-        
-        total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
-        printf("Total:              %lf\n", total );
-        printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
+
+	if(rank==0)print(Matriz,"Salida");
+
+        if(rank==0){
+            gettimeofday(&t3, NULL);
+            int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
+            
+            gettimeofday(&t4, NULL);
+            
+            total = ((t2.tv_sec * 1000000 + t2.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
+            printf("Inicializado:       %lf\n", total );
+            
+            total = ((t3.tv_sec * 1000000 + t3.tv_usec)-(t2.tv_sec * 1000000 + t2.tv_usec));
+            printf("Creacion de matriz: %lf\n", total );
+            
+            total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t3.tv_sec * 1000000 + t3.tv_usec));
+            printf("Backtracking:       %lf\n", total ) ;
+            
+            total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
+            printf("Total:              %lf\n", total );
+            printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
+        }
     }
     else
     {
         exit(3);
     }
-    printf("Fin");
+    MPI_Barrier(MPI_COMM_WORLD);
+    printf("Fin P%d\n",rank);
+    MPI_Finalize();
     exit(0);
     return 0;
 }
@@ -263,12 +295,18 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
 
 
 void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int sobrecarga)
-{
+{  
     int P,id,i,j,r,l;
-    MPI_Init(NULL,NULL);
+	MPI_Barrier(MPI_COMM_WORLD);
+
     MPI_Comm_size(MPI_COMM_WORLD,&P);
     MPI_Comm_rank(MPI_COMM_WORLD,&id);
+
+
+
+
     //Crear datos locales
+                                                                                //printf("Rank: %d.Crear datos locales\n",id);                                        
     if(id==0)
     {
         r=(strlen(string1)+1);
@@ -294,6 +332,7 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     }
     //Crear tipo para Struct
     // Origen de código: https://stackoverflow.com/questions/9864510/struct-serialization-in-c-and-transfer-over-mpi
+                                                                                //printf("Rank: %d.Crear struct MPI\n",id);  
     const int nitems=2;
     int          blocklengths[2] = {1,1};
     MPI_Datatype types[2] = {MPI_INT, MPI_CHAR};
@@ -305,7 +344,10 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     MPI_Type_commit(&mpi_celda);
     
     //Enviar a los procesos
-    MPI_Bcast(string1, r-1, MPI_CHAR, 0, MPI_COMM_WORLD);
+                                                                                //printf("Rank: %d.Enviando\n",id);  //ORIGEN DE ERROR
+                                                                                //printf("Rank: %d: %d==%d\n",id,r-1,strlen(string1));
+    //MPI_Bcast(string1, r-1, MPI_CHAR, 0, MPI_COMM_WORLD);
+                                                                                //printf("Rank: %d.Bcast\n",id);
     if(id==0)
     {
         MPI_Scatter(&string2[k], num, MPI_CHAR, &string2_l[k], num,MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -318,13 +360,17 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     }
     else
     {
+        
         MPI_Scatter(&string2[k], num, MPI_CHAR, &string2_l[0], num,MPI_CHAR, 0, MPI_COMM_WORLD);
+                                                                                    //printf("Rank: %d.SCatter1\n",id);
         MPI_Scatter(&Matriz[0][k], num, mpi_celda, &matriz_l[0][0], num,mpi_celda, 0, MPI_COMM_WORLD);
+                                                                                    //printf("Rank: %d.Allsended\n",id);
     }    
         
     //Ejecutar código
     CalcularSubMatrizMPI(matriz_l,string1,string2_l,id,P-1);
     //Recolectar de los procesos
+                                                                                    //printf("Rank: %d.Recolectando procesos\n",id);  
     if(id==0)
     {
         for(j=1;j<r-1;j++)
@@ -339,9 +385,11 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
         for(j=1;j<r-1;j++)
             MPI_Gather(&matriz_l[j][k], num, mpi_celda, &Matriz[j][0], num, mpi_celda, 0, MPI_COMM_WORLD);
     }
+                                                                                //printf("Rank: %d.Fin MPI\n",id);  
     //FinalizarMPI
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Finalize();
+                                                                                //printf("Rank: %d.Barrera superada\n",id);  
+                                                                                //printf("Rank: %d.Fin Funcion\n",id);  
 }
 
 
@@ -361,37 +409,49 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
  */
 void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, int id,int maxId)
 {
+                                                                                //printf("Rank: %d.Comienza calculo submatriz\n",id);
+    MPI_Status status;
 	int size1=strlen(string1); //Tamaño dependiente del char* recibido, filas
-	int tam=strlen(string2);   //Tamaño dependiente del char* recibido, columnas
+	int tam;
+	if(id>0)
+		tam=(strlen(string2))/maxId;   //Tamaño dependiente del char* recibido, columnas
+	else
+		tam=1+((strlen(string2))/maxId)+(strlen(string2)%maxId);
 	int i;
 	int j;
-	int valor1,valor2;
+	int valor1,valor2=0;
 	valor1=matrix[0][0].score;
 	for( i = 1; i <= size1; ++i)   //PARA CADA FILA
 	{
 	    if(id!=0)
 	    {
-	        valor2=valor1; //Desplazar buffer de datos
-	        MPI_Recv(&valor1,1,MPI_INT,id-1,i,MPI_COMM_WORLD,MPI_STATUS_IGNORE);   //Recibir dato para nueva linea
-	        CalcularCasilla(i, 0, string1[i] == string2[0] || string1[i] == 'N' || string2[0] == 'N', matrix,true,valor1,valor2);
-		  for( j = 1; j < tam; ++j)
+	        	                                                                                                                   //printf("Rank: %d.Fila %d: valor: %d\n",id,i,valor2);    //PETA EN LA 1
+	      valor2=valor1; //Desplazar buffer de datos
+	                                                                                                                               //printf("Rank: %d.Buffer desplazado",id); 
+	      MPI_Recv(&valor1,1,MPI_INT,id-1,i,MPI_COMM_WORLD,&status);   //Recibir dato para nueva linea
+	      printf("%d",id);                                                                                                                         //printf("Rank: %d. Calcular casilla 0",id);
+	      CalcularCasilla(i, 1, string1[i] == string2[0] || string1[i] == 'N' || string2[0] == 'N', matrix,true,valor1,valor2,id);
+		  for( j = 2; j < tam; ++j)
 		  {
-		    CalcularCasilla(i, j, string1[i] == string2[j] || string1[i] == 'N' || string2[j] == 'N', matrix,false,0,0);
+		    printf("%d",id);        	                                                                                                                   //printf("Rank: %d. Calcular casilla %d",id,j);
+		    CalcularCasilla(i, j, string1[i] == string2[j] || string1[i] == 'N' || string2[j] == 'N', matrix,false,0,0,id);
 		  }
 		  if(id!=maxId)                                                //Si no es el ultimo
 	        MPI_Send(&matrix[i][tam].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
 	   }
 	   else
 	   {
+	printf("0");		
 	    for( j = 1; j < tam; ++j)
 		  {
-		    CalcularCasilla(i, j, string1[i-1] == string2[j-1] || string1[i-1] == 'N' || string2[j-1] == 'N', matrix,false,0,0);
+			printf(".");
+		    CalcularCasilla(i, j, string1[i-1] == string2[j-1] || string1[i-1] == 'N' || string2[j-1] == 'N', matrix,false,0,0,id);
 		  }
 		  if(id!=maxId)                                                //Si no es el ultimo
 		    MPI_Send(&matrix[i][tam].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
        }
 	}
-	
+	                                                                            //printf("Rank: %d.Fin calculo submatriz\n",id);
     return;
 }
 
@@ -408,7 +468,7 @@ void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, i
  * @param MPIData1 Valor a la izquierda del calculado si MPIrec
  * @param MPIData2 Valor a la diagonal del calculado si MPIrec
  */
-void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix,bool MPIrec,int MPIData1, int MPIData2)
+void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix,bool MPIrec,int MPIData1, int MPIData2, int id)
 {
     int A,B,C;
     if(!MPIrec){
@@ -422,6 +482,7 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix,b
         A = MPIData1 - 1;
         B = matrix[i][j-1].score - 1;
         C = MPIData2+ (igual*4)-2; //C= arg + (argB*(Match-Fallo))+Fallo
+	
     }
     
     //Calculo de la direccion como un array de booleanos
@@ -430,9 +491,11 @@ void CalcularCasilla(unsigned i, unsigned j, bool igual, struct Celda **matrix,b
     D += (B>=A && B>=C); //Horizontal en 2a posicion
     D += (C>=B && C>=A)<<2; //Diagonal en 3a posicion
     matrix[i][j].dir = D;
-    
     matrix[i][j].score=maxI(maxI(A,B),C);
-    
+if(!MPIrec)
+	printf("i:%d j:%d id:%d horz:%d diag:%d arriba:%d res:%d\n",i,j,id,matrix[i-1][j],matrix[i-1][j-1], matrix[i][j-1].score,matrix[i][j].score);
+else
+	printf("i:%d j:%d id:%d horz:%d diag:%d arriba:%d res:%d\n",i,j,id,MPIData1,MPIData2, matrix[i][j-1].score,matrix[i][j].score);
 }
 
 /**
@@ -456,7 +519,7 @@ unsigned GetRuta(struct Celda** matrix, unsigned i, unsigned j)
 	       matrix[x][y].score=-1;
 	
 	AuxGetRuta(matrix, i, j, 0, &maximo);
-	
+		
 	return maximo;
 }
 
@@ -501,4 +564,28 @@ int AuxGetRuta(struct Celda** matrix, unsigned i, unsigned j, int cont, unsigned
 	
 	matrix[i][j].score=maxI(maxI(A,B),C);
     return matrix[i][j].score;
+}
+
+
+void print(struct Celda** matrix,char* titulo)
+{
+int x;
+int y;
+	printf("%s",titulo);
+	printf("\n");
+        for(x=0;x<=7;x++) {
+        for(y=0;y<=7;y++)
+            printf("%d ", matrix[x][y].score);
+         printf("\n");
+        }
+        printf("\n");
+
+	printf("\n");
+        for(x=0;x<=7;x++) {
+        for(y=0;y<=7;y++)
+            printf("%d ", matrix[x][y].dir);
+         printf("\n");
+        }
+        printf("\n");
+
 }
