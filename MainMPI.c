@@ -128,9 +128,25 @@ int main( int argc, char *argv[] )
     
             gettimeofday(&t1, NULL);
         }
+
+	if(rank==0){	
             string1=CargarFichero(nombre1,T1,I1);
             string2=CargarFichero(nombre2,T2,I2);   
-    
+    		x=strlen(string1);
+		y=strlen(string2);
+		MPI_Bcast(&x,1,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&y,1,MPI_INT,0,MPI_COMM_WORLD);
+	}
+	else
+	{
+		MPI_Bcast(&x,1,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&y,1,MPI_INT,0,MPI_COMM_WORLD);
+		string1=malloc(x);
+		string2=malloc(y);
+	}
+	MPI_Bcast(&string1[0],x,MPI_CHAR,0,MPI_COMM_WORLD);
+	MPI_Bcast(&string2[0],y,MPI_CHAR,0,MPI_COMM_WORLD);
+
             if(strlen(string1)==0 || strlen(string2)==0)
             {
                 printf("Una cadena esta vacia");
