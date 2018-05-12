@@ -17,8 +17,8 @@ struct Celda
 void ImprimirInstruccionesDeUso();
 char* CargarFichero(char*,unsigned,unsigned);
 struct Celda** inicializarMatriz(unsigned, unsigned);
-void CompletarMatrizMPI(char* string1, char*, struct Celda**, int);
-void CalcularSubMatrizMPI(struct Celda**, char*, char*, int,int);
+void CompletarMatrizMPI(char* string1, char*, struct Celda**, int,int,int);
+void CalcularSubMatrizMPI(struct Celda**, char*, char*, int,int,int,int,int);
 void CalcularCasilla(unsigned, unsigned, bool, struct Celda**,bool,int,int,int);  
 unsigned GetRuta(struct Celda**,unsigned,unsigned);
 int AuxGetRuta(struct Celda**, unsigned, unsigned, int, unsigned*);
@@ -130,10 +130,14 @@ int main( int argc, char *argv[] )
         }
 
 	if(rank==0){	
+
             string1=CargarFichero(nombre1,T1,I1);
             string2=CargarFichero(nombre2,T2,I2);   
-    		x=strlen(string1);
-		y=strlen(string2);
+
+    		x=strlen(string1)+1;
+		y=strlen(string2)+1;
+
+
 		MPI_Bcast(&x,1,MPI_INT,0,MPI_COMM_WORLD);
 		MPI_Bcast(&y,1,MPI_INT,0,MPI_COMM_WORLD);
 	}
@@ -143,30 +147,31 @@ int main( int argc, char *argv[] )
 		MPI_Bcast(&y,1,MPI_INT,0,MPI_COMM_WORLD);
 		string1=malloc(x);
 		string2=malloc(y);
+
 	}
 	MPI_Bcast(&string1[0],x,MPI_CHAR,0,MPI_COMM_WORLD);
 	MPI_Bcast(&string2[0],y,MPI_CHAR,0,MPI_COMM_WORLD);
-
             if(strlen(string1)==0 || strlen(string2)==0)
             {
                 printf("Una cadena esta vacia");
                 exit(2);
             }
 	if(rank==0)
-	{
-            Matriz=inicializarMatriz(strlen(string1),strlen(string2));
+	{            
+	Matriz=inicializarMatriz(x-1,y-1);
             gettimeofday(&t2, NULL);
 	}
 
            
 	//if(rank==0)print(Matriz,"PreCalculo",7,7);  
-        CompletarMatrizMPI(string1,string2,Matriz,sobrecarga);
+	//printf("Inicializada %d\n",rank);
+        CompletarMatrizMPI(string1,string2,Matriz,sobrecarga,x-1,y-1);
 
 	//if(rank==0)print(Matriz,"Salida",7,7);
 
         if(rank==0){
             gettimeofday(&t3, NULL);
-            int resultado= GetRuta(Matriz,strlen(string1),strlen(string2));
+            int resultado= GetRuta(Matriz,x-1,y-1);
             
             gettimeofday(&t4, NULL);
             
@@ -181,7 +186,7 @@ int main( int argc, char *argv[] )
             
             total = ((t4.tv_sec * 1000000 + t4.tv_usec)-(t1.tv_sec * 1000000 + t1.tv_usec));
             printf("Total:              %lf\n", total );
-            printf("Coincidencia(porc): %d\n", 100*resultado/maxU(strlen(string1),strlen(string2)));
+            printf("Coincidencia(porc): %d\n", 100*resultado/maxU(x-1,y-1));
         }
     }
     else
@@ -238,6 +243,7 @@ void ImprimirInstruccionesDeUso()
  */
 char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
 {
+
     tamano*=100;
     FILE *archivo;
  	unsigned i;
@@ -251,20 +257,26 @@ char* CargarFichero(char* NombreFichero,unsigned tamano,unsigned inicio)
  		exit(1);
  	}
  	else
-    {
+    	{
+
         fgets(caracteres,100,archivo); //Primera linea
         for(i=0;(i<inicio)&&(feof(archivo) == 0);i++)
         {
             fgets(caracteres,100,archivo);
         }
-        i=tamano;
- 	    while (feof(archivo) == 0) //Hasta fin de archivo o memoria
+
+        i=tamano/100;
+	unsigned j=0;
+ 	    while (j<i && feof(archivo) == 0) //Hasta fin de archivo o memoria
  	    {
+		j++;
  		fgets(caracteres,100,archivo);
  		strcat(cadena, caracteres);
  	    }
+
     }
         Mayus(cadena);
+
 	return cadena;
 }
 
@@ -299,7 +311,7 @@ struct Celda** inicializarMatriz(unsigned r, unsigned c)
 }
 
 
-void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int sobrecarga)
+void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int sobrecarga, int altoString, int anchoString)
 {  
     int P,id,i,j,r,l;
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -313,8 +325,8 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     //Crear datos locales
     if(id==0)
     {
-        r=(strlen(string1)+1);
-        l=strlen(string2);
+        r=(altoString+1);
+        l=anchoString;
     }
     MPI_Bcast(&r, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&l, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -344,7 +356,6 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     MPI_Type_commit(&mpi_celda);
     
     //Enviar a los procesos
-   //MPI_Bcast(string1, r-1, MPI_CHAR, 0, MPI_COMM_WORLD);
     if(id==0)
     {
         MPI_Scatter(&Matriz[0][k+1], num, mpi_celda, &matriz_l[0][k+1], num,mpi_celda, 0, MPI_COMM_WORLD);
@@ -359,31 +370,59 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
     }
     else
     {
-        MPI_Scatter(&Matriz[0][k+1], num, mpi_celda, &matriz_l[0][0], num,mpi_celda, 0, MPI_COMM_WORLD);
+//	if(&Matriz[0][k+1]==NULL) printf("ERROR");
+//	if(&matriz_l[0][0]==NULL) printf("ERROR");
+//	if(mpi_celda==NULL) printf("ERROR");
+
+        MPI_Scatter(NULL, num, mpi_celda, &matriz_l[0][0], num,mpi_celda, 0, MPI_COMM_WORLD);
 	//print(matriz_l,"Local_sub",7,num-1);
     }    
         
+		//printf("Ejecutando código %d\n",id);
+
     //Ejecutar código
 
-    CalcularSubMatrizMPI(matriz_l,string1,string2,id,P-1);
+	if(id==0)
+    CalcularSubMatrizMPI(matriz_l,string1,string2,id,P-1,num+k+1, altoString, anchoString);
+	else
+    CalcularSubMatrizMPI(matriz_l,string1,string2,id,P-1,num, altoString, anchoString);
+
+			//printf("Recolectando procesos %d\n",id);
+
     //Recolectar de los procesos
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	//printf("Barrera superada");
+
     if(id==0)
     {
         for(j=1;j<r;j++){
             MPI_Gather(&matriz_l[j][k+1], num, mpi_celda, &Matriz[j][k+1], num, mpi_celda, 0, MPI_COMM_WORLD);
             for(i=1;i<=k;i++)
             {
-                Matriz[j-1][i].score=matriz_l[j-1][i].score;
-		Matriz[j-1][i].dir=matriz_l[j-1][i].dir;
+                Matriz[j][i].score=matriz_l[j][i].score;
+		Matriz[j][i].dir=matriz_l[j][i].dir;
             }}
     }
     else
     {
-	//print(matriz_l,"Local_sub",7,num-1);
-        for(j=1;j<r;j++)
-            MPI_Gather(&matriz_l[j][0], num, mpi_celda, &Matriz[j][k+1], num, mpi_celda, 0, MPI_COMM_WORLD);    
+	//print(matriz_l,"Local_sub",7,num-1);	
+        for(j=1;j<r;j++){
+		
+/*
+		printf("Rank 1   j=%d\n",j);
+		printf("Rank 1 k+1=%d\n",k+1);
+		//printf("Rank 1 Matriz=%d\n",Matriz[j][k+1].score);
+		printf("Rank 1 Matriz_l=%d\n",matriz_l[j][0].score);
+		printf("Rank 1 Matriz=%d\n",Matriz[j][k+1+num-1].score);
+		printf("Rank 1 Matriz_l=%d\n",matriz_l[j][num-1].score);
+
+*/
+            MPI_Gather(&matriz_l[j][0], num, mpi_celda, NULL, num, mpi_celda, 0, MPI_COMM_WORLD);    
 	}
+}
      //FinalizarMPI
+//printf("Fin MPI %d\n",id);
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
@@ -402,16 +441,14 @@ void CompletarMatrizMPI(char* string1, char* string2, struct Celda** Matriz, int
  * @param id Identificador del hilo que  esta ejecutando esta funcion
  * @param maxId Maximo identificador de hilo
  */
-void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, int id,int maxId)
+void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, int id,int maxId,int num, int altoString, int anchoString)	//HEREDAR NUM!!
 {
     MPI_Status status;
-	int size1=strlen(string1); //Tamaño dependiente del char* recibido, filas
-	int tam;
-	if(id>0)
-		tam=((strlen(string2)-strlen(string2)%(maxId+1))/(maxId+1));
-	else
-		tam=((strlen(string2)-strlen(string2)%(maxId+1))/(maxId+1))+strlen(string2)%(maxId+1);
-	int minBlucle=id*tam+7%3;
+	int size1=altoString; //Tamaño dependiente del char* recibido, filas
+
+	int tam=num;
+
+	int minBlucle=id*tam+anchoString%(maxId+1);
 	int i;
 	int j;
 	int valor1;
@@ -433,16 +470,20 @@ void CalcularSubMatrizMPI(struct Celda** matrix, char* string1, char* string2, i
 		    CalcularCasilla(i, j, string1[i-1] == string2[minBlucle+j] || string1[i-1] == 'N' || string2[minBlucle+j] == 'N', matrix,false,0,0,id);
 		  }
 		if(id!=maxId)                                                //Si no es el ultimo
-	        	MPI_Send(&matrix[i][tam].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
+		{
+	        	MPI_Send(&matrix[i][tam-1].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
+		}
 	   }
 	   else
 	   {	
-	    for( j = 1; j <= tam; ++j)
+	    for( j = 1; j < tam; ++j)
 		  {
 		    CalcularCasilla(i, j, string1[i-1] == string2[j-1] || string1[i-1] == 'N' || string2[j-1] == 'N', matrix,false,0,0,id);
 		  }
 		  if(id!=maxId)                                                //Si no es el ultimo
-		    MPI_Send(&matrix[i][tam].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
+			{
+		    MPI_Send(&matrix[i][tam-1].score,1,MPI_INT,id+1,i,MPI_COMM_WORLD);  //Enviar dato a siguiente procesador
+			}
        }
 	}
     return;
